@@ -28,22 +28,4 @@ router.get('/audio/:audio_event', (req, res) => {
     });
 });
 
-// API endpoint to add a visitor
-router.post('/visitors', (req, res) => {
-    const name = req.body.name;
-    if (!name) {
-        res.status(400).json({ error: "Name is required" });
-        return;
-    }
-    const stmt = db.prepare("INSERT INTO visitors (name) VALUES (?)");
-    stmt.run(name, function(err) {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.json({ id: this.lastID });
-    });
-    stmt.finalize();
-});
-
 module.exports = router;

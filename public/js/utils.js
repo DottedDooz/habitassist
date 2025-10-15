@@ -246,7 +246,7 @@ export const uiUtils = {
     const currentMinutes = currH * 60 + currM;
     const startMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
-    return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
   },
   scheduleDailyAnalysis() {
     const now = new Date();

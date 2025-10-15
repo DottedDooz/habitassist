@@ -61,7 +61,7 @@ export const trackerTab = {
     }
 
     elements.eventLabel.textContent = currentEvent;
-    uiUtils.handleHabitChange(currentEvent);
+    //uiUtils.handleHabitChange(currentEvent);
 
     this.updateProgressBar(eventStartTime, eventEndTime);
     this.updateRemainingTime(eventEndTime);
