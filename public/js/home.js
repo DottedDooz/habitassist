@@ -123,19 +123,22 @@ export const homeTab = {
       let elapsedPercentage = (elapsedTime / duration) * 100;
       if (elapsedPercentage > 100) elapsedPercentage = 100;
 
-      const progress = document.createElement("div");
-      progress.className = "segment-progress";
-      progress.style.height = `${elapsedPercentage}%`;
-
-      const segmentBackground = document.createElement("div");
-      segmentBackground.className = "segment-background";
-
       const endTimeDiv = document.createElement("div");
       endTimeDiv.className = "segment-endTime";
       endTimeDiv.innerHTML = defaultEvent.end_time + "--";
 
+      const track = document.createElement("div");
+      track.className = "segment-track";
+
+      const segmentBackground = document.createElement("div");
+      segmentBackground.className = "segment-background";
+
+      const progress = document.createElement("div");
+      progress.className = "segment-progress";
+      progress.style.height = `${elapsedPercentage}%`;
+
       const labelContainer = document.createElement("div");
-      labelContainer.className = "segment-label-container";
+      labelContainer.className = "segment-content";
 
       const defaultLabel = document.createElement("div");
       defaultLabel.className = "segment-label";
@@ -152,9 +155,10 @@ export const homeTab = {
       });
 
       segment.appendChild(endTimeDiv);
-      segment.appendChild(segmentBackground);
-      segment.appendChild(progress);
-      progress.appendChild(labelContainer);
+      track.appendChild(segmentBackground);
+      track.appendChild(progress);
+      segment.appendChild(track);
+      segment.appendChild(labelContainer);
       elements.scheduleBar.appendChild(segment);
     });
   },

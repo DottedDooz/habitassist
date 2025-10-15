@@ -12,50 +12,100 @@
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
-    <div class="header">
-        <h1>Habit Assist</h1>
-        <button id="index-button" data-page="index">Index</button>
-        <button id="home-button" data-page="home">Home</button>
-        <button id="completions-button" data-page="completions">Completions</button>
-        <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
-    </div>
+    <div class="page-wrapper">
+        <header class="app-header">
+            <div class="branding">
+                <h1>Habit Assist</h1>
+                <p class="tagline">Plan and maintain routines with ease.</p>
+            </div>
+            <div class="header-actions">
+                <nav class="nav-tabs">
+                    <button id="index-button" class="nav-button is-active" data-page="index" type="button">Index</button>
+                    <button id="home-button" class="nav-button" data-page="home" type="button">Home</button>
+                    <button id="completions-button" class="nav-button" data-page="completions" type="button">Completions</button>
+                </nav>
+                <button id="dark-mode-toggle" class="mode-toggle" type="button" aria-label="Toggle dark mode">
+                    <span class="mode-toggle__icon" aria-hidden="true"></span>
+                    <span class="mode-toggle__label">Dark mode</span>
+                </button>
+            </div>
+        </header>
 
-        <!-- Page container -->
-    <div id="content">
-            <div id="habitForm">
-            <select id="habitType">
-                <option value="default">Default Habit</option>
-                <option value="day-specific">Day Specific Habit</option>
-            </select>
-            <input type="text" id="eventName" placeholder="Event Name">
-            <input type="time" id="startTime">
-            <input type="time" id="endTime">
-            <select id="dayOfWeek" style="display: none;">
-                <option value="">Select Day</option>
-                <option value="Monday">Monday</option>
-                <option value="Tuesday">Tuesday</option>
-                <option value="Wednesday">Wednesday</option>
-                <option value="Thursday">Thursday</option>
-                <option value="Friday">Friday</option>
-                <option value="Saturday">Saturday</option>
-                <option value="Sunday">Sunday</option>
-            </select>
-            <button onclick="addHabit()">Add Habit</button>
-        </div>
+        <main id="content" class="content">
+            <div class="layout-grid">
+                <section class="card form-card">
+                    <div class="card-header">
+                        <h2>Schedule a Habit</h2>
+                        <p>Create or update routines to keep your day on track.</p>
+                    </div>
+                    <form id="habitForm" class="form-grid">
+                        <div class="form-field">
+                            <label for="habitType">Habit type</label>
+                            <div class="input-wrapper">
+                                <select id="habitType">
+                                    <option value="default">Default habit</option>
+                                    <option value="day-specific">Day specific habit</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="eventName">Habit name</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="eventName" placeholder="Morning workout">
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="startTime">Start time</label>
+                            <div class="input-wrapper">
+                                <input type="time" id="startTime">
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="endTime">End time</label>
+                            <div class="input-wrapper">
+                                <input type="time" id="endTime">
+                            </div>
+                        </div>
+                        <div class="form-field is-hidden" id="dayOfWeekWrapper">
+                            <label for="dayOfWeek">Day of the week</label>
+                            <div class="input-wrapper">
+                                <select id="dayOfWeek">
+                                    <option value="">Select day</option>
+                                    <option value="Monday">Monday</option>
+                                    <option value="Tuesday">Tuesday</option>
+                                    <option value="Wednesday">Wednesday</option>
+                                    <option value="Thursday">Thursday</option>
+                                    <option value="Friday">Friday</option>
+                                    <option value="Saturday">Saturday</option>
+                                    <option value="Sunday">Sunday</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-footer">
+                            <button class="primary-button" type="submit">Add habit</button>
+                        </div>
+                    </form>
+                </section>
 
-        <div id="habitLists">
-            <h2>Default Habits</h2>
-            <ul id="defaultHabits"></ul>
-
-            <h2>Day-Specific Habits</h2>
-            <ul id="daySpecificHabits"></ul>
-        </div>
-
+                <section class="card list-card">
+                    <div class="card-header">
+                        <h2>Habit Overview</h2>
+                        <p>Monitor default and day-specific routines in one place.</p>
+                    </div>
+                    <div class="list-section">
+                        <h3>Default habits</h3>
+                        <ul id="defaultHabits" class="habit-list"></ul>
+                    </div>
+                    <div class="list-section">
+                        <h3>Day specific habits</h3>
+                        <ul id="daySpecificHabits" class="habit-list"></ul>
+                    </div>
+                </section>
+            </div>
+        </main>
     </div>
 
     <script src="/js/index.js"></script>
-
     <script type="module" src="js/main.js"></script>
-
 </body>
 </html>

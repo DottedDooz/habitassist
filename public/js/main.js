@@ -20,10 +20,30 @@ if (localStorage.getItem('theme') === 'dark') {
 document.body.classList.add('dark-mode');
 }
 
+const setPageContext = (page) => {
+document.body.classList.remove('page--index', 'page--home', 'page--completions');
+if (page) {
+    document.body.classList.add(`page--${page}`);
+}
+};
+
+const detectInitialPage = () => {
+if (document.querySelector('#completions')) return 'completions';
+if (document.querySelector('#home')) return 'home';
+return 'index';
+};
+
 // Initialize application
 const init = () => {
 initTabs();
 uiUtils.scheduleDailyAnalysis();
+const initialPage = detectInitialPage();
+setPageContext(initialPage);
+if (initialPage === 'home') {
+    homeTab.init();
+} else if (initialPage === 'completions') {
+    completionsTab.init();
+}
 //homeTab.init(); // Start with home tab
 };
 
@@ -56,9 +76,13 @@ try {
     if (newContent) {
         contentDiv.innerHTML = newContent.innerHTML;
         if(path === '/home'){
+            setPageContext('home');
             homeTab.init(); // Re-initialize home tab
         } else if (path === '/completions') {
+            setPageContext('completions');
             completionsTab.init(); // Re-initialize home tab
+        } else {
+            setPageContext('index');
         }
         //if (push) history.pushState({}, '', path);
     } else {

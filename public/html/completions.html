@@ -1,54 +1,75 @@
 <div id="content">
-    <div id="completions" class="page">
-        <div id="habitModal" class="modal">
-            <div class="modal-content">
-                <h3>Habit Actions</h3>
-                <p id="modalHabitName" class="muted"></p>
-                <label class="field">
-                    <span>Status</span>
-                    <select id="completionStatusModal">
-                        <option value="failed">Failed</option>
-                        <option value="partially_completed">Partially Completed</option>
-                        <option value="completed">Completed</option>
-                        <option value="perfectly_completed">Perfectly Completed</option>
-                    </select>
-                </label>
-                <div class="modal-actions">
-                    <button class="btn primary" onclick="updateCompletion()">Save</button>
-                    <button class="btn danger" onclick="deleteCompletion()">Delete</button>
-                    <button class="btn" onclick="closeModal()">Cancel</button>
+    <div id="completions" class="page completions-page">
+        <div id="habitModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="habitModalTitle">
+            <div class="modal__dialog">
+                <header class="modal__header">
+                    <h3 id="habitModalTitle">Adjust Habit Completion</h3>
+                    <button class="modal__close" type="button" aria-label="Close dialog" onclick="closeModal()">&times;</button>
+                </header>
+                <div class="modal__body">
+                    <p id="modalHabitName" class="modal__subtitle"></p>
+                    <label class="form-field">
+                        <span>Status</span>
+                        <div class="input-wrapper">
+                            <select id="completionStatusModal">
+                                <option value="failed">Failed</option>
+                                <option value="partially_completed">Partially Completed</option>
+                                <option value="completed">Completed</option>
+                                <option value="perfectly_completed">Perfectly Completed</option>
+                            </select>
+                        </div>
+                    </label>
                 </div>
+                <footer class="modal__footer">
+                    <button class="btn primary" type="button" onclick="updateCompletion()">Save</button>
+                    <button class="btn danger" type="button" onclick="deleteCompletion()">Delete</button>
+                    <button class="btn ghost" type="button" onclick="closeModal()">Cancel</button>
+                </footer>
             </div>
         </div>
 
-        <section id="weeklyHabits" class="section">
-            <div class="section-header">
-                <h2>Weekly Habits</h2>
-                <!--
-                <div class="legend">
-                    <span class="legend-item status-pill failed">Failed</span>
-                    <span class="legend-item status-pill partially_completed">Partial</span>
-                    <span class="legend-item status-pill completed">Done</span>
-                    <span class="legend-item status-pill perfectly_completed">Perfect</span>
+        <section id="weeklyHabits" class="card completions-card">
+            <div class="card-header">
+                <div>
+                    <h2>Weekly Habits</h2>
+                    <p>Snapshot of each routine and its latest completion status.</p>
                 </div>
-                -->
+                <div class="legend">
+                    <span class="status-pill status-failed">Failed</span>
+                    <span class="status-pill status-partially_completed">Partial</span>
+                    <span class="status-pill status-perfectly_completed">Perfect</span>
+                </div>
             </div>
-            <div id="daysContainer" class="days-container"></div>
+            <div id="daysContainer" class="days-grid"></div>
         </section>
 
-        <section id="analyzeDay" class="section">
-            <h2>Analyze Day</h2>
-            <input type="date" id="analysisDate">
-            <button onclick="analyzeDay()">Analyze</button>
-            <div id="analysisResult"></div>
+        <section id="analyzeDay" class="card completions-card">
+            <div class="card-header">
+                <div>
+                    <h2>Analyze Day</h2>
+                    <p>Generate a daily summary leveraging completions and skipped habits.</p>
+                </div>
+            </div>
+            <form class="analyze-form" onsubmit="return runAnalysis(event)">
+                <label class="form-field">
+                    <span>Choose date</span>
+                    <div class="input-wrapper">
+                        <input type="date" id="analysisDate">
+                    </div>
+                </label>
+                <button class="btn primary" type="submit">Analyze</button>
+            </form>
+            <div id="analysisResult" class="analysis-result"></div>
         </section>
 
-        <section id="completionHistory" class="section">
-            <div class="section-header"><h2>Completion History</h2></div>
-            <ul id="completionList" class="list"></ul>
+        <section id="completionHistory" class="card completions-card">
+            <div class="card-header">
+                <div>
+                    <h2>Completion History</h2>
+                    <p>Recent habit completion updates across all routines.</p>
+                </div>
+            </div>
+            <ul id="completionList" class="completion-history"></ul>
         </section>
     </div>
-
-    
-
 </div>
