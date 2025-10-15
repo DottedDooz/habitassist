@@ -7,7 +7,7 @@ export const state = {
   lastEvent: "",
 };
 
-const HABIT_WATCHER_INTERVAL_MS = 1000;
+const HABIT_WATCHER_INTERVAL_MS = 5000;
 let habitWatcherIntervalId = null;
 
 const ensureAudioPlayer = () => {
@@ -23,8 +23,8 @@ const ensureAudioPlayer = () => {
 };
 
 export const elements = {
-  homeTab: document.getElementById("home"),
-  completionsTab: document.getElementById("completions"),
+  trackerTab: document.getElementById("tracker"),
+  insightsTab: document.getElementById("insights"),
 };
 
 export const api = {
@@ -259,6 +259,12 @@ export const uiUtils = {
       setInterval(() => api.analyzeDay(timeUtils.getTodayDate(), true), 24 * 60 * 60 * 1000);
     }, timeUntilTarget);
   },
+  async handleHabitChange(eventName, { playAudio = true } = {}) {
+    if (state.lastEvent === eventName) return;
+    state.lastEvent = eventName;
+    if (!playAudio) return;
+    await api.playAudioForEvent(eventName);
+  },
   startHabitWatcher() {
     if (habitWatcherIntervalId) return;
 
@@ -273,11 +279,9 @@ export const uiUtils = {
 
         const currentHabit = this.getCurrentHabit();
         const currentEvent = currentHabit ? currentHabit.event : "No Event";
-
-        if (state.lastEvent !== currentEvent) {
-          await api.playAudioForEvent(currentEvent);
-          state.lastEvent = currentEvent;
-        }
+        const isTrackerPageActive = document.body.classList.contains("page--tracker");
+        if (isTrackerPageActive) return;
+        await this.handleHabitChange(currentEvent);
       } catch (error) {
         console.error("Error monitoring habit changes:", error);
       }

@@ -16,10 +16,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const htmlDir = path.join(__dirname, 'public/html');
 
 app.get('/', (req, res) => {
-    const filePath = path.join(htmlDir, 'index.html');
+    const filePath = path.join(htmlDir, 'planner.html');
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            res.status(500).send('Error reading the index.html file');
+            res.status(500).send('Error reading the planner.html file');
+            return;
+        }
+        res.send(data);
+    });
+});
+
+app.get('/planner', (req, res) => {
+    const filePath = path.join(htmlDir, 'planner.html');
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            res.status(500).send('Error reading the planner.html file');
             return;
         }
         res.send(data);
@@ -27,10 +38,21 @@ app.get('/', (req, res) => {
 });
 
 app.get('/index', (req, res) => {
-    const filePath = path.join(htmlDir, 'index.html');
+    const filePath = path.join(htmlDir, 'planner.html');
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            res.status(500).send('Error reading the home.html file');
+            res.status(500).send('Error reading the planner.html file');
+            return;
+        }
+        res.send(data);
+    });
+});
+
+app.get('/tracker', (req, res) => {
+    const filePath = path.join(htmlDir, 'tracker.html');
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            res.status(500).send('Error reading the tracker.html file');
             return;
         }
         res.send(data);
@@ -38,10 +60,21 @@ app.get('/index', (req, res) => {
 });
 
 app.get('/home', (req, res) => {
-    const filePath = path.join(htmlDir, 'home.html');
+    const filePath = path.join(htmlDir, 'tracker.html');
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            res.status(500).send('Error reading the home.html file');
+            res.status(500).send('Error reading the tracker.html file');
+            return;
+        }
+        res.send(data);
+    });
+});
+
+app.get('/insights', (req, res) => {
+    const filePath = path.join(htmlDir, 'insights.html');
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            res.status(500).send('Error reading the insights.html file');
             return;
         }
         res.send(data);
@@ -49,10 +82,10 @@ app.get('/home', (req, res) => {
 });
 
 app.get('/completions', (req, res) => {
-    const filePath = path.join(htmlDir, 'completions.html');
+    const filePath = path.join(htmlDir, 'insights.html');
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            res.status(500).send('Error reading the completions.html file');
+            res.status(500).send('Error reading the insights.html file');
             return;
         }
         res.send(data);

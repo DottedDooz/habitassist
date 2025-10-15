@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HabitAssist</title>
+    <title>HabitAssist • Planner</title>
 
     <!-- Global styles -->
     <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/home.css">
-    <link rel="stylesheet" href="css/completions.css">
+    <link rel="stylesheet" href="css/tracker.css">
+    <link rel="stylesheet" href="css/insights.css">
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
@@ -20,9 +20,9 @@
             </div>
             <div class="header-actions">
                 <nav class="nav-tabs">
-                    <button id="index-button" class="nav-button is-active" data-page="index" type="button">Index</button>
-                    <button id="home-button" class="nav-button" data-page="home" type="button">Home</button>
-                    <button id="completions-button" class="nav-button" data-page="completions" type="button">Completions</button>
+                    <button id="planner-button" class="nav-button is-active" data-page="planner" type="button">Planner</button>
+                    <button id="tracker-button" class="nav-button" data-page="tracker" type="button">Tracker</button>
+                    <button id="insights-button" class="nav-button" data-page="insights" type="button">Insights</button>
                 </nav>
                 <button id="dark-mode-toggle" class="mode-toggle" type="button" aria-label="Toggle dark mode">
                     <span class="mode-toggle__icon" aria-hidden="true"></span>
@@ -105,7 +105,7 @@
         </main>
     </div>
 
-    <script src="/js/index.js"></script>
+    <script src="/js/planner.js"></script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

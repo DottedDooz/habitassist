@@ -1,4 +1,4 @@
-// homeTab.js
+// trackerTab.js
 import { state, api, timeUtils, uiUtils } from "./utils.js";
 
 let elements = {
@@ -10,7 +10,7 @@ let elements = {
   completionButtons: document.getElementById("completion-buttons"),
 };
 
-export const homeTab = {
+export const trackerTab = {
   updateTime() {
     const now = new Date();
     const timeString = `${now
@@ -61,10 +61,7 @@ export const homeTab = {
     }
 
     elements.eventLabel.textContent = currentEvent;
-    if (state.lastEvent !== currentEvent) {
-      api.playAudioForEvent(currentEvent);
-      state.lastEvent = currentEvent;
-    }
+    uiUtils.handleHabitChange(currentEvent);
 
     this.updateProgressBar(eventStartTime, eventEndTime);
     this.updateRemainingTime(eventEndTime);
@@ -259,3 +256,5 @@ export const homeTab = {
     setInterval(() => this.updateWebsite(), 1000);
   },
 };
+
+window.markHabit = (status) => trackerTab.markHabit(status);

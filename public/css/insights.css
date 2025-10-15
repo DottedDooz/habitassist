@@ -6,13 +6,13 @@
     --status-none: rgba(15, 23, 42, 0.18);
 }
 
-.completions-page {
+.insights-page {
     display: flex;
     flex-direction: column;
     gap: 28px;
 }
 
-.completions-card {
+.insights-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 18px;
@@ -24,30 +24,30 @@
     transition: transform var(--transition), box-shadow var(--transition), background var(--transition), border-color var(--transition);
 }
 
-.completions-card:hover {
+.insights-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 22px 48px -26px rgba(15, 23, 42, 0.55);
 }
 
-body.dark-mode .completions-card {
+body.dark-mode .insights-card {
     background: rgba(12, 20, 36, 0.92);
     border-color: rgba(99, 115, 148, 0.32);
     box-shadow: 0 28px 60px -24px rgba(1, 6, 18, 0.85);
 }
 
-.completions-card .card-header {
+.insights-card .card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 16px;
 }
 
-.completions-card .card-header h2 {
+.insights-card .card-header h2 {
     margin: 0;
     font-size: 22px;
 }
 
-.completions-card .card-header p {
+.insights-card .card-header p {
     margin: 6px 0 0;
     color: var(--text-secondary);
     font-size: 14px;

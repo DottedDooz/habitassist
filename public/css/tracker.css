@@ -1,61 +1,61 @@
 :root {
-    --home-gap: 28px;
-    --home-panel-radius: 18px;
-    --home-panel-padding: 28px;
+    --tracker-gap: 28px;
+    --tracker-panel-radius: 18px;
+    --tracker-panel-padding: 28px;
 }
 
-#home {
+#tracker {
     display: flex;
     flex-direction: column;
     gap: 24px;
 }
 
-#home .container {
+#tracker .container {
     display: flex;
-    gap: var(--home-gap);
+    gap: var(--tracker-gap);
     align-items: stretch;
     width: 100%;
     min-height: 520px;
 }
 
-#home .main-content,
-#home .sidebar {
+#tracker .main-content,
+#tracker .sidebar {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--home-panel-radius);
+    border-radius: var(--tracker-panel-radius);
     box-shadow: var(--shadow);
-    padding: var(--home-panel-padding);
+    padding: var(--tracker-panel-padding);
     display: flex;
     flex-direction: column;
     gap: 24px;
     transition: transform var(--transition), box-shadow var(--transition), background var(--transition), border-color var(--transition);
 }
 
-#home .main-content:hover,
-#home .sidebar:hover {
+#tracker .main-content:hover,
+#tracker .sidebar:hover {
     transform: translateY(-2px);
     box-shadow: 0 18px 42px -18px rgba(15, 23, 42, 0.55);
 }
 
-#home .main-content {
+#tracker .main-content {
     flex: 2;
     align-items: center;
     text-align: center;
 }
 
-#home .sidebar {
+#tracker .sidebar {
     flex: 1;
     max-height: none;
 }
 
-#home h2,
-#home h3,
-#home p {
+#tracker h2,
+#tracker h3,
+#tracker p {
     color: var(--text-primary);
     margin: 0;
 }
 
-#home h3 {
+#tracker h3 {
     font-size: 18px;
     letter-spacing: 0.02em;
 }
@@ -121,7 +121,7 @@
     color: var(--text-secondary);
 }
 
-#home button {
+#tracker button {
     padding: 10px 20px;
     border-radius: 999px;
     border: none;
@@ -133,8 +133,8 @@
     transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 
-#home button:hover,
-#home button:focus-visible {
+#tracker button:hover,
+#tracker button:focus-visible {
     outline: none;
     background: var(--primary-hover);
     transform: translateY(-1px);
@@ -283,8 +283,8 @@ body.dark-mode .segment-background {
     border-bottom-right-radius: 12px;
 }
 
-body.dark-mode #home .main-content,
-body.dark-mode #home .sidebar {
+body.dark-mode #tracker .main-content,
+body.dark-mode #tracker .sidebar {
     box-shadow: 0 20px 48px -18px rgba(8, 15, 32, 0.7);
 }
 
@@ -298,19 +298,19 @@ body.dark-mode .completion-buttons {
 }
 
 @media (max-width: 1100px) {
-    #home .container {
+    #tracker .container {
         flex-direction: column;
     }
 
-    #home .sidebar {
+    #tracker .sidebar {
         max-height: none;
         order: 3;
     }
 }
 
 @media (max-width: 720px) {
-    #home .main-content,
-    #home .sidebar {
+    #tracker .main-content,
+    #tracker .sidebar {
         padding: 22px;
         border-radius: 16px;
     }
@@ -320,7 +320,7 @@ body.dark-mode .completion-buttons {
         padding: 16px;
     }
 
-    #home button {
+    #tracker button {
         width: 100%;
     }
 }

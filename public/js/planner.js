@@ -1,4 +1,4 @@
-// indexTab.js
+// plannerTab.js
 const state = {
   habits: { default: [], daySpecific: [] },
 };
@@ -15,7 +15,7 @@ let elements = {
   daySpecificHabits: document.getElementById("daySpecificHabits"),
 };
 
-const indexPage = {
+const plannerPage = {
   alertInterval: null,
   init() {
     this.cacheElements();
@@ -249,8 +249,8 @@ const indexPage = {
   },
 };
 
-document.addEventListener("DOMContentLoaded", () => indexPage.init());
+document.addEventListener("DOMContentLoaded", () => plannerPage.init());
 
 // Preserve global handlers referenced in inline HTML.
-window.addHabit = () => indexPage.addHabit();
-window.deleteHabit = (type, id) => indexPage.deleteHabit(type, id);
+window.addHabit = () => plannerPage.addHabit();
+window.deleteHabit = (type, id) => plannerPage.deleteHabit(type, id);

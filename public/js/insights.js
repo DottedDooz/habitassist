@@ -1,4 +1,4 @@
-// completionsTab.js
+// insightsTab.js
 import { state, api, timeUtils, uiUtils } from "./utils.js";
 
 let elements = {
@@ -18,7 +18,7 @@ const statusLabels = {
   perfectly_completed: "Perfectly completed",
 };
 
-export const completionsTab = {
+export const insightsTab = {
   displayWeeklyHabits() {
     elements.daysContainer.innerHTML = "";
     const daysOfWeek = [
@@ -304,7 +304,7 @@ export const completionsTab = {
   },
 };
 
-window.updateCompletion = () => completionsTab.updateCompletion();
-window.deleteCompletion = () => completionsTab.deleteCompletion();
-window.closeModal = () => completionsTab.closeModal();
-window.runAnalysis = (event) => completionsTab.runAnalysis(event);
+window.updateCompletion = () => insightsTab.updateCompletion();
+window.deleteCompletion = () => insightsTab.deleteCompletion();
+window.closeModal = () => insightsTab.closeModal();
+window.runAnalysis = (event) => insightsTab.runAnalysis(event);
