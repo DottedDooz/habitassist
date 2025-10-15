@@ -4,11 +4,13 @@ import { state, api, timeUtils, uiUtils } from "./utils.js";
 let elements = {
   daysContainer: document.getElementById("daysContainer"),
   completionList: document.getElementById("completionList"),
+  loadMoreButton: document.getElementById("loadMoreCompletions"),
   modal: document.getElementById("habitModal"),
   modalHabitName: document.getElementById("modalHabitName"),
   completionStatusModal: document.getElementById("completionStatusModal"),
   analysisResult: document.getElementById("analysisResult"),
   analysisDate: document.getElementById("analysisDate"),
+  loadingIndicator: document.getElementById("insightsLoading"),
 };
 
 const statusLabels = {
@@ -19,6 +21,22 @@ const statusLabels = {
 };
 
 export const insightsTab = {
+  toggleLoading(isLoading) {
+    if (elements.loadingIndicator) {
+      elements.loadingIndicator.classList.toggle("is-visible", isLoading);
+    }
+    if (elements.daysContainer) {
+      elements.daysContainer.classList.toggle("is-loading", isLoading);
+      if (!isLoading) {
+        elements.daysContainer.removeAttribute("aria-busy");
+      } else {
+        elements.daysContainer.setAttribute("aria-busy", "true");
+      }
+    }
+    if (elements.completionList) {
+      elements.completionList.classList.toggle("is-loading", isLoading);
+    }
+  },
   displayWeeklyHabits() {
     elements.daysContainer.innerHTML = "";
     const daysOfWeek = [
@@ -139,6 +157,9 @@ export const insightsTab = {
   updateCompletionHistory() {
     elements.completionList.innerHTML = "";
     if (state.completions.length === 0) {
+      if (elements.loadMoreButton) {
+        elements.loadMoreButton.style.display = "none";
+      }
       const empty = document.createElement("li");
       empty.className = "completion-history__item";
       empty.innerHTML = `<div class="completion-history__meta">
@@ -147,6 +168,15 @@ export const insightsTab = {
       </div>`;
       elements.completionList.appendChild(empty);
       return;
+    }
+
+    if (elements.loadMoreButton) {
+      const hasMore = Boolean(state.completionsPage?.hasMore);
+      elements.loadMoreButton.style.display = hasMore ? "inline-flex" : "none";
+      elements.loadMoreButton.disabled = !hasMore;
+      if (hasMore) {
+        elements.loadMoreButton.textContent = "Load more";
+      }
     }
 
     state.completions
@@ -193,6 +223,7 @@ export const insightsTab = {
   },
   async updateHabitCompletion(habit, existingCompletion, status, completionDate) {
     try {
+      this.toggleLoading(true);
       const completionDateTime = new Date(
         new Date(completionDate).setTime(new Date().getTime())
       );
@@ -207,6 +238,8 @@ export const insightsTab = {
     } catch (error) {
       console.error("Error updating completion:", error);
       alert("An error occurred");
+    } finally {
+      this.toggleLoading(false);
     }
   },
   showModal(habit, completion) {
@@ -241,6 +274,7 @@ export const insightsTab = {
     );
 
     try {
+      this.toggleLoading(true);
       if (state.selectedHabit.completion) {
         await api.updateCompletion(
           state.selectedHabit.completion.id,
@@ -258,6 +292,8 @@ export const insightsTab = {
     } catch (error) {
       console.error("Error updating completion:", error);
       alert("An error occurred");
+    } finally {
+      this.toggleLoading(false);
     }
   },
   async deleteCompletion() {
@@ -266,6 +302,7 @@ export const insightsTab = {
       return;
     }
     try {
+      this.toggleLoading(true);
       await api.deleteCompletion(state.selectedHabit.completion.id);
       await uiUtils.fetchAllData();
       this.displayWeeklyHabits();
@@ -275,6 +312,45 @@ export const insightsTab = {
     } catch (error) {
       console.error("Error deleting completion:", error);
       alert("An error occurred");
+    } finally {
+      this.toggleLoading(false);
+    }
+  },
+  async loadMoreCompletions() {
+    const pagination = state.completionsPage;
+    if (!pagination?.hasMore) return;
+
+    if (elements.loadMoreButton) {
+      elements.loadMoreButton.disabled = true;
+      elements.loadMoreButton.textContent = "Loading…";
+    }
+
+    try {
+      const { limit, offset } = pagination;
+      const response = await api.fetchCompletions({ limit, offset });
+      const newCompletions = response?.completions || [];
+      state.completions = state.completions.concat(newCompletions);
+      state.completionsPage = {
+        limit: response?.limit ?? limit,
+        offset: response?.nextOffset ?? offset + newCompletions.length,
+        total: response?.total ?? pagination.total,
+        hasMore: response?.hasMore ?? false,
+      };
+      this.updateCompletionHistory();
+    } catch (error) {
+      console.error("Error loading more completions:", error);
+      alert("Failed to load more completions. Please try again.");
+    } finally {
+      if (elements.loadMoreButton) {
+        const hasMore = Boolean(state.completionsPage?.hasMore);
+        elements.loadMoreButton.disabled = !hasMore;
+        if (hasMore) {
+          elements.loadMoreButton.textContent = "Load more";
+          elements.loadMoreButton.style.display = "inline-flex";
+        } else {
+          elements.loadMoreButton.style.display = "none";
+        }
+      }
     }
   },
   runAnalysis(event) {
@@ -283,24 +359,31 @@ export const insightsTab = {
     uiUtils.analyzeDay(dateValue);
     return false;
   },
-  init() {
+  async init() {
     elements = {
       daysContainer: document.getElementById("daysContainer"),
       completionList: document.getElementById("completionList"),
+      loadMoreButton: document.getElementById("loadMoreCompletions"),
       modal: document.getElementById("habitModal"),
       modalHabitName: document.getElementById("modalHabitName"),
       completionStatusModal: document.getElementById("completionStatusModal"),
       analysisResult: document.getElementById("analysisResult"),
       analysisDate: document.getElementById("analysisDate"),
+      loadingIndicator: document.getElementById("insightsLoading"),
     };
 
     if (elements.analysisDate && !elements.analysisDate.value) {
       elements.analysisDate.value = timeUtils.getTodayDate();
     }
 
-    uiUtils.fetchAllData();
-    this.displayWeeklyHabits();
-    this.updateCompletionHistory();
+    this.toggleLoading(true);
+    try {
+      await uiUtils.fetchAllData();
+      this.displayWeeklyHabits();
+      this.updateCompletionHistory();
+    } finally {
+      this.toggleLoading(false);
+    }
   },
 };
 
@@ -308,3 +391,4 @@ window.updateCompletion = () => insightsTab.updateCompletion();
 window.deleteCompletion = () => insightsTab.deleteCompletion();
 window.closeModal = () => insightsTab.closeModal();
 window.runAnalysis = (event) => insightsTab.runAnalysis(event);
+window.loadMoreCompletions = () => insightsTab.loadMoreCompletions();

@@ -3,6 +3,12 @@ export const state = {
   schedule: [],
   habits: { default: [], daySpecific: [] },
   completions: [],
+  completionsPage: {
+    limit: 25,
+    offset: 0,
+    total: 0,
+    hasMore: false,
+  },
   selectedHabit: null,
   lastEvent: "",
 };
@@ -38,10 +44,14 @@ export const api = {
     if (!response.ok) throw new Error("Failed to fetch specific schedule");
     return (await response.json()).schedule;
   },
-  async fetchCompletions() {
-    const response = await fetch("/api/completions");
+  async fetchCompletions({ limit = 25, offset = 0 } = {}) {
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    const response = await fetch(`/api/completions?${params.toString()}`);
     if (!response.ok) throw new Error("Failed to fetch completions");
-    return (await response.json()).completions;
+    return await response.json();
   },
   async markHabit(habit, status) {
     const response = await fetch("/api/completions", {
@@ -207,7 +217,14 @@ export const uiUtils = {
         ]);
       state.habits.default = defaultSchedule || [];
       state.habits.daySpecific = specificSchedule || [];
-      state.completions = completionData || [];
+      const completionPayload = completionData || {};
+      state.completions = completionPayload.completions || [];
+      state.completionsPage = {
+        limit: completionPayload.limit ?? state.completionsPage.limit,
+        offset: completionPayload.nextOffset ?? state.completions.length,
+        total: completionPayload.total ?? state.completions.length,
+        hasMore: completionPayload.hasMore ?? false,
+      };
     } catch (error) {
       console.error("Error fetching schedules:", error);
       alert("Failed to load schedules. Please try again.");

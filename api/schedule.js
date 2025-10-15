@@ -19,6 +19,7 @@ const DAY_ORDER = [
 
 const VALID_HABIT_TYPES = ['default', 'day-specific'];
 const VALID_COMPLETION_STATUSES = [
+    'failed',
     'partially_completed',
     'completed',
     'perfectly_completed',
@@ -30,6 +31,14 @@ const all = (sql, params = []) =>
         db.all(sql, params, (err, rows) => {
             if (err) return reject(err);
             resolve(rows);
+        });
+    });
+
+const get = (sql, params = []) =>
+    new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+            if (err) return reject(err);
+            resolve(row);
         });
     });
 
@@ -253,12 +262,44 @@ router.delete('/schedule/:type/:id', async (req, res) => {
 });
 
 // --- Completion endpoints -------------------------------------------------
-router.get('/completions', async (_req, res) => {
+const parsePaginationInt = (value, { defaultValue = 0, min = 0, max = Number.MAX_SAFE_INTEGER } = {}) => {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed)) return defaultValue;
+    return Math.min(Math.max(parsed, min), max);
+};
+
+const DEFAULT_COMPLETION_LIMIT = 25;
+const MAX_COMPLETION_LIMIT = 500;
+
+router.get('/completions', async (req, res) => {
     try {
+        const limit = parsePaginationInt(req.query.limit, {
+            defaultValue: DEFAULT_COMPLETION_LIMIT,
+            min: 1,
+            max: MAX_COMPLETION_LIMIT,
+        });
+        const offset = parsePaginationInt(req.query.offset, {
+            defaultValue: 0,
+            min: 0,
+        });
+
         const completions = await all(
-            'SELECT * FROM habit_completions ORDER BY completion_date DESC',
+            'SELECT * FROM habit_completions ORDER BY completion_date DESC LIMIT ? OFFSET ?',
+            [limit, offset],
         );
-        res.json({ completions });
+        const { total = 0 } =
+            (await get('SELECT COUNT(*) as total FROM habit_completions')) || {};
+        const nextOffset = offset + completions.length;
+        const hasMore = nextOffset < total;
+
+        res.json({
+            completions,
+            total,
+            limit,
+            offset,
+            nextOffset,
+            hasMore,
+        });
     } catch (error) {
         handleUnexpectedError(res, error, 'Failed to load completions');
     }

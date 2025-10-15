@@ -2,7 +2,6 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
-const visitorsRouter = require('./api/visitors');
 const scheduleRouter = require('./api/schedule');
 const audioRouter = require('./api/audio');
 
@@ -96,7 +95,6 @@ app.get('/completions', (req, res) => {
 app.use(express.static('public'));
 
 // Use the API routes
-app.use('/api', visitorsRouter);
 app.use('/api', scheduleRouter);
 app.use('/api', audioRouter);
 // Start the server and listen on port 3000

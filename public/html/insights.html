@@ -40,6 +40,10 @@
                     <span class="status-pill status-perfectly_completed">Perfect</span>
                 </div>
             </div>
+            <div id="insightsLoading" class="loading-state" role="status" aria-live="polite">
+                <span class="loading-state__spinner" aria-hidden="true"></span>
+                <span class="loading-state__text">Loading insights…</span>
+            </div>
             <div id="daysContainer" class="days-grid"></div>
         </section>
 
@@ -70,6 +74,15 @@
                 </div>
             </div>
             <ul id="completionList" class="completion-history"></ul>
+            <button
+                id="loadMoreCompletions"
+                class="btn ghost completion-history__load-more"
+                type="button"
+                style="display: none"
+                onclick="loadMoreCompletions()"
+            >
+                Load more
+            </button>
         </section>
     </div>
 </div>

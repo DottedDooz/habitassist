@@ -59,6 +59,48 @@ body.dark-mode .insights-card {
     flex-wrap: wrap;
 }
 
+.loading-state {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 18px;
+    padding: 36px 24px;
+    border-radius: 14px;
+    border: 1px dashed var(--border);
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    font-size: 14px;
+    min-height: clamp(320px, 65vh, 520px);
+}
+
+.loading-state.is-visible {
+    display: flex;
+}
+
+.loading-state__spinner {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 4px solid var(--border);
+    border-top-color: var(--primary);
+    animation: insights-spin 0.9s linear infinite;
+}
+
+.loading-state__text {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+    font-size: 16px;
+}
+
+.is-loading {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+
 .status-pill {
     display: inline-flex;
     align-items: center;
@@ -81,6 +123,15 @@ body.dark-mode .insights-card {
     background: transparent;
     color: var(--text-secondary);
     border: 1px dashed var(--border);
+}
+
+@keyframes insights-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .days-grid {
@@ -288,6 +339,10 @@ body.dark-mode .completion-habit.has-status .status-button--perfectly_completed 
 .completion-history__time {
     font-size: 13px;
     color: var(--text-secondary);
+}
+
+.completion-history__load-more {
+    margin: 12px auto 0;
 }
 
 .analyze-form {

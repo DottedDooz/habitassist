@@ -3,34 +3,6 @@ const db = new sqlite3.Database('./database/db.sqlite');
 
 // Initialize the database
 db.serialize(() => {
-    // Create a table
-    db.run("CREATE TABLE IF NOT EXISTS visitors (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)", (err) => {
-        if (err) {
-            console.error("Error creating table:", err);
-            return;
-        }
-
-        // Check if the table is empty
-        db.get("SELECT COUNT(*) as count FROM visitors", (err, row) => {
-            if (err) {
-                console.error("Error querying table:", err);
-                return;
-            }
-
-            if (row.count === 0) {
-                // Insert a default visitor if the table is empty
-                const stmt = db.prepare("INSERT INTO visitors (name) VALUES (?)");
-                stmt.run("Guest", (err) => {
-                    if (err) {
-                        console.error("Error inserting default guest:", err);
-                    } else {
-                        console.log("Inserted default guest.");
-                    }
-                });
-                stmt.finalize();
-            }
-        });
-    });
 
     // Create default_schedule table
     db.run("CREATE TABLE IF NOT EXISTS default_schedule (id INTEGER PRIMARY KEY AUTOINCREMENT, event TEXT, start_time TEXT, end_time TEXT)", (err) => {
@@ -185,34 +157,72 @@ db.serialize(() => {
         });
     });
 
-    // Create habit_completions table
-    db.run(`
-        CREATE TABLE IF NOT EXISTS habit_completions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            habit_id INTEGER, -- Links to either default_schedule.id or day_specific_schedule.id
-            habit_type TEXT NOT NULL CHECK(habit_type IN ('default', 'day-specific')), -- Type of habit
-            completion_date DATETIME DEFAULT CURRENT_TIMESTAMP, -- When the habit was completed
-            status TEXT NOT NULL CHECK(status IN ('partially_completed', 'completed', 'perfectly_completed')), -- Completion status
-            FOREIGN KEY (habit_id) REFERENCES default_schedule(id) ON DELETE SET NULL, -- Optional foreign key for default
-            FOREIGN KEY (habit_id) REFERENCES day_specific_schedule(id) ON DELETE SET NULL -- Optional for day-specific
-        )
-    `, (err) => {
-        if (err) {
-            console.error("Error creating habit_completions table:", err);
-            return;
-        }
-
-        // Check if the habit_completions table is empty (optional, for initial data)
-        db.get("SELECT COUNT(*) as count FROM habit_completions", (err, row) => {
+    const createHabitCompletionsTable = () => {
+        db.run(`
+            CREATE TABLE IF NOT EXISTS habit_completions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                habit_id INTEGER, -- Links to either default_schedule.id or day_specific_schedule.id
+                habit_type TEXT NOT NULL CHECK(habit_type IN ('default', 'day-specific')), -- Type of habit
+                completion_date DATETIME DEFAULT CURRENT_TIMESTAMP, -- When the habit was completed
+                status TEXT NOT NULL CHECK(status IN ('failed', 'partially_completed', 'completed', 'perfectly_completed')), -- Completion status
+                FOREIGN KEY (habit_id) REFERENCES default_schedule(id) ON DELETE SET NULL, -- Optional foreign key for default
+                FOREIGN KEY (habit_id) REFERENCES day_specific_schedule(id) ON DELETE SET NULL -- Optional for day-specific
+            )
+        `, (err) => {
             if (err) {
-                console.error("Error querying habit_completions table:", err);
+                console.error("Error creating habit_completions table:", err);
                 return;
             }
 
-            if (row.count === 0) {
-                console.log("No initial data needed for habit_completions (empty is normal).");
-            }
+            // Check if the habit_completions table is empty (optional, for initial data)
+            db.get("SELECT COUNT(*) as count FROM habit_completions", (err, row) => {
+                if (err) {
+                    console.error("Error querying habit_completions table:", err);
+                    return;
+                }
+
+                if (row.count === 0) {
+                    console.log("No initial data needed for habit_completions (empty is normal).");
+                }
+            });
         });
+    };
+
+    db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='habit_completions'", (err, row) => {
+        if (err) {
+            console.error("Error inspecting habit_completions table:", err);
+            createHabitCompletionsTable();
+            return;
+        }
+
+        if (row && row.sql && !row.sql.includes("'failed'")) {
+            db.exec(`
+                BEGIN TRANSACTION;
+                ALTER TABLE habit_completions RENAME TO habit_completions_old;
+                CREATE TABLE habit_completions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    habit_id INTEGER,
+                    habit_type TEXT NOT NULL CHECK(habit_type IN ('default', 'day-specific')),
+                    completion_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    status TEXT NOT NULL CHECK(status IN ('failed', 'partially_completed', 'completed', 'perfectly_completed')),
+                    FOREIGN KEY (habit_id) REFERENCES default_schedule(id) ON DELETE SET NULL,
+                    FOREIGN KEY (habit_id) REFERENCES day_specific_schedule(id) ON DELETE SET NULL
+                );
+                INSERT INTO habit_completions (id, habit_id, habit_type, completion_date, status)
+                    SELECT id, habit_id, habit_type, completion_date, status FROM habit_completions_old;
+                DROP TABLE habit_completions_old;
+                COMMIT;
+            `, (migrationErr) => {
+                if (migrationErr) {
+                    console.error("Error migrating habit_completions table:", migrationErr);
+                } else {
+                    console.log("Migrated habit_completions table to include 'failed' status.");
+                }
+                createHabitCompletionsTable();
+            });
+        } else {
+            createHabitCompletionsTable();
+        }
     });
 
 });

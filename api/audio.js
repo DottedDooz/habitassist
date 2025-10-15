@@ -10,7 +10,7 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min; // The maximum is inclusive and the minimum is inclusive
   }
 
-// API endpoint to get visitors
+  
 router.get('/audio/:audio_event', (req, res) => {
     const audio_event = req.params.audio_event;
     db.all("SELECT count,dir FROM event_audio WHERE event = ?", [audio_event], (err, row) => {
