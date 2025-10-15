@@ -7,6 +7,21 @@ export const state = {
   lastEvent: "",
 };
 
+const HABIT_WATCHER_INTERVAL_MS = 1000;
+let habitWatcherIntervalId = null;
+
+const ensureAudioPlayer = () => {
+  let audioPlayer = document.getElementById("audioPlayer");
+  if (!audioPlayer) {
+    audioPlayer = document.createElement("audio");
+    audioPlayer.id = "audioPlayer";
+    audioPlayer.setAttribute("preload", "auto");
+    audioPlayer.style.display = "none";
+    document.body.appendChild(audioPlayer);
+  }
+  return audioPlayer;
+};
+
 export const elements = {
   homeTab: document.getElementById("home"),
   completionsTab: document.getElementById("completions"),
@@ -77,7 +92,7 @@ export const api = {
       if (!response.ok) throw new Error("Failed to fetch audio");
       const blob = await response.blob();
       const audioUrl = URL.createObjectURL(blob);
-      const audioPlayer = document.getElementById("audioPlayer");
+      const audioPlayer = ensureAudioPlayer();
       audioPlayer.src = audioUrl;
       audioPlayer.play();
     } catch (error) {
@@ -243,6 +258,36 @@ export const uiUtils = {
       api.analyzeDay(timeUtils.getTodayDate(), true);
       setInterval(() => api.analyzeDay(timeUtils.getTodayDate(), true), 24 * 60 * 60 * 1000);
     }, timeUntilTarget);
+  },
+  startHabitWatcher() {
+    if (habitWatcherIntervalId) return;
+
+    const checkForHabitChange = async () => {
+      try {
+        const [defaultSchedule, specificSchedule] = await Promise.all([
+          api.fetchDefaultSchedule(),
+          api.fetchSpecificSchedule(),
+        ]);
+        state.habits.default = defaultSchedule || [];
+        state.habits.daySpecific = specificSchedule || [];
+
+        const currentHabit = this.getCurrentHabit();
+        const currentEvent = currentHabit ? currentHabit.event : "No Event";
+
+        if (state.lastEvent !== currentEvent) {
+          await api.playAudioForEvent(currentEvent);
+          state.lastEvent = currentEvent;
+        }
+      } catch (error) {
+        console.error("Error monitoring habit changes:", error);
+      }
+    };
+
+    checkForHabitChange();
+    habitWatcherIntervalId = window.setInterval(
+      checkForHabitChange,
+      HABIT_WATCHER_INTERVAL_MS
+    );
   },
 };
 

@@ -37,6 +37,7 @@ return 'index';
 const init = () => {
 initTabs();
 uiUtils.scheduleDailyAnalysis();
+uiUtils.startHabitWatcher();
 const initialPage = detectInitialPage();
 setPageContext(initialPage);
 if (initialPage === 'home') {

@@ -233,10 +233,13 @@ export const homeTab = {
         completionButtons: document.getElementById("completion-buttons"),
     };
 
-    document.getElementById("playButton").addEventListener("click", () =>
-      api.playAudioForEvent(state.lastEvent)
-    );
-    elements.scheduleBar.addEventListener("scroll", this.handleManualScroll);
+    const playButton = document.getElementById("playButton");
+    if (playButton) {
+      playButton.addEventListener("click", () =>
+        api.playAudioForEvent(state.lastEvent)
+      );
+    }
+    elements.scheduleBar?.addEventListener("scroll", this.handleManualScroll);
 
     let autoScrollInterval = setInterval(() => this.scrollToCurrentEvent(), 60000);
     let manualScrollTimeout;

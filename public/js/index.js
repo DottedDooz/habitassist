@@ -227,7 +227,7 @@ const indexPage = {
         habit.start_time <= currentTime &&
         habit.end_time >= currentTime
       ) {
-        alert(`Reminder: It's time for ${habit.event}!`);
+        //alert(`Reminder: It's time for ${habit.event}!`);
       }
     });
 
@@ -237,9 +237,9 @@ const indexPage = {
         habit.start_time <= currentTime &&
         habit.end_time >= currentTime
       ) {
-        alert(
+        /*alert(
           `Reminder: It's time for ${habit.event} on ${habit.day_of_week}!`
-        );
+        );*/
       }
     });
   },
