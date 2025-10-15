@@ -1,0 +1,254 @@
+// homeTab.js
+import { state, api, timeUtils, uiUtils } from "./utils.js";
+
+let elements = {
+  timer: document.getElementById("timer"),
+  eventLabel: document.getElementById("event-label"),
+  progressBar: document.getElementById("progress-bar"),
+  remainingTime: document.getElementById("remaining-time"),
+  scheduleBar: document.getElementById("schedule-bar"),
+  completionButtons: document.getElementById("completion-buttons"),
+};
+
+export const homeTab = {
+  updateTime() {
+    const now = new Date();
+    const timeString = `${now
+      .getHours()
+      .toString()
+      .padStart(2, "0")}:${now
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
+    elements.timer.textContent = timeString;
+  },
+  updateEvent() {
+    const currentTime = timeUtils.getCurrentTime();
+    let currentEvent = "No Event";
+    let eventStartTime, eventEndTime;
+
+    for (const event of state.habits.daySpecific) {
+      if (
+        currentTime >= event.start_time &&
+        currentTime < event.end_time
+      ) {
+        currentEvent = event.event;
+        eventStartTime = new Date(
+          `${new Date().toDateString()} ${event.start_time}`
+        );
+        eventEndTime = new Date(
+          `${new Date().toDateString()} ${event.end_time}`
+        );
+        break;
+      }
+    }
+    if (currentEvent === "No Event") {
+      for (const event of state.habits.default) {
+        if (
+          currentTime >= event.start_time &&
+          currentTime < event.end_time
+        ) {
+          currentEvent = event.event;
+          eventStartTime = new Date(
+            `${new Date().toDateString()} ${event.start_time}`
+          );
+          eventEndTime = new Date(
+            `${new Date().toDateString()} ${event.end_time}`
+          );
+          break;
+        }
+      }
+    }
+
+    elements.eventLabel.textContent = currentEvent;
+    if (state.lastEvent !== currentEvent) {
+      api.playAudioForEvent(currentEvent);
+      state.lastEvent = currentEvent;
+    }
+
+    this.updateProgressBar(eventStartTime, eventEndTime);
+    this.updateRemainingTime(eventEndTime);
+  },
+  updateProgressBar(startTime, endTime) {
+    if (!startTime || !endTime) {
+      elements.progressBar.style.width = "0%";
+      return;
+    }
+    const now = new Date();
+    const totalDuration = endTime - startTime;
+    const elapsedDuration = now - startTime;
+    const progress = Math.min(100, (elapsedDuration / totalDuration) * 100);
+    elements.progressBar.style.width = `${progress}%`;
+  },
+  updateRemainingTime(endTime) {
+    if (!endTime) {
+      elements.remainingTime.textContent = "Remaining Time: --:--:--";
+      return;
+    }
+    const now = new Date();
+    const remainingTime = endTime - now;
+    if (remainingTime <= 0) {
+      elements.remainingTime.textContent = "Remaining Time: 00:00:00";
+      return;
+    }
+    const hours = Math.floor(remainingTime / (1000 * 60 * 60))
+      .toString()
+      .padStart(2, "0");
+    const minutes = Math.floor(
+      (remainingTime % (1000 * 60 * 60)) / (1000 * 60)
+    )
+      .toString()
+      .padStart(2, "0");
+    const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000)
+      .toString()
+      .padStart(2, "0");
+    elements.remainingTime.textContent = `Remaining Time: ${hours}:${minutes}:${seconds}`;
+  },
+  updateSideProgressBar() {
+    elements.scheduleBar.innerHTML = "";
+    const totalDuration = state.habits.default.reduce(
+      (sum, event) => sum + timeUtils.getEventDuration(event),
+      0
+    );
+
+    state.habits.default.forEach((defaultEvent) => {
+      const segment = document.createElement("div");
+      segment.className = "schedule-segment";
+      const duration = timeUtils.getEventDuration(defaultEvent);
+      let percentage = (duration / totalDuration) * 100;
+      if (percentage < 1) percentage = 1;
+      segment.style.height = `${percentage}%`;
+
+      const elapsedTime = timeUtils.getElapsedTime(defaultEvent);
+      let elapsedPercentage = (elapsedTime / duration) * 100;
+      if (elapsedPercentage > 100) elapsedPercentage = 100;
+
+      const progress = document.createElement("div");
+      progress.className = "segment-progress";
+      progress.style.height = `${elapsedPercentage}%`;
+
+      const segmentBackground = document.createElement("div");
+      segmentBackground.className = "segment-background";
+
+      const endTimeDiv = document.createElement("div");
+      endTimeDiv.className = "segment-endTime";
+      endTimeDiv.innerHTML = defaultEvent.end_time + "--";
+
+      const labelContainer = document.createElement("div");
+      labelContainer.className = "segment-label-container";
+
+      const defaultLabel = document.createElement("div");
+      defaultLabel.className = "segment-label";
+      defaultLabel.textContent = defaultEvent.event;
+      labelContainer.appendChild(defaultLabel);
+
+      state.habits.daySpecific.forEach((specificEvent) => {
+        if (this.isOverlapping(defaultEvent, specificEvent)) {
+          const specificLabel = document.createElement("div");
+          specificLabel.className = "segment-label specific-label";
+          specificLabel.innerHTML = `<span>${specificEvent.event}</span> (${specificEvent.day_of_week}, ${specificEvent.start_time}-${specificEvent.end_time})`;
+          labelContainer.appendChild(specificLabel);
+        }
+      });
+
+      segment.appendChild(endTimeDiv);
+      segment.appendChild(segmentBackground);
+      segment.appendChild(progress);
+      progress.appendChild(labelContainer);
+      elements.scheduleBar.appendChild(segment);
+    });
+  },
+  isOverlapping(defaultEvent, specificEvent) {
+    const defaultStart = timeUtils.parseTime(defaultEvent.start_time);
+    const defaultEnd = timeUtils.parseTime(defaultEvent.end_time);
+    const specificStart = timeUtils.parseTime(specificEvent.start_time);
+    const specificEnd = timeUtils.parseTime(specificEvent.end_time);
+    return defaultStart <= specificEnd && specificStart <= defaultEnd;
+  },
+  getCurrentEventIndex() {
+    const now = new Date();
+    const [year, month, date] = [
+      now.getFullYear(),
+      (now.getMonth() + 1).toString().padStart(2, "0"),
+      now.getDate().toString().padStart(2, "0"),
+    ];
+    return state.habits.default.findIndex((event) => {
+      let startTime = new Date(`${year}-${month}-${date}T${event.start_time}Z`);
+      let endTime = new Date(`${year}-${month}-${date}T${event.end_time}Z`);
+      startTime = startTime.setHours(
+        startTime.getHours() + now.getTimezoneOffset() / 60
+      );
+      endTime = endTime.setHours(
+        endTime.getHours() + now.getTimezoneOffset() / 60
+      );
+      return now >= startTime && now <= endTime;
+    });
+  },
+  scrollToCurrentEvent() {
+    const currentIndex = this.getCurrentEventIndex();
+    if (currentIndex !== -1) {
+      const eventElements = document.querySelectorAll(".schedule-segment");
+      if (eventElements[currentIndex]) {
+        eventElements[currentIndex].scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+  },
+  updateWebsite() {
+    this.updateTime();
+    this.updateEvent();
+    this.updateSideProgressBar();
+    const currentHabit = uiUtils.getCurrentHabit();
+    elements.eventLabel.textContent = currentHabit ? currentHabit.event : "No Event";
+    elements.completionButtons.style.display = currentHabit ? "block" : "none";
+  },
+  async markHabit(status) {
+    const currentHabit = uiUtils.getCurrentHabit();
+    if (!currentHabit) {
+      alert("No current habit to mark as completed!");
+      return;
+    }
+    try {
+      await api.markHabit(currentHabit, status);
+      await uiUtils.fetchAllData();
+      alert(`Habit marked as ${status}!`);
+    } catch (error) {
+      console.error("Error marking habit:", error);
+      alert("An error occurred");
+    }
+  },
+  init() {
+    elements = {
+        timer: document.getElementById("timer"),
+        eventLabel: document.getElementById("event-label"),
+        progressBar: document.getElementById("progress-bar"),
+        remainingTime: document.getElementById("remaining-time"),
+        scheduleBar: document.getElementById("schedule-bar"),
+        completionButtons: document.getElementById("completion-buttons"),
+    };
+
+    document.getElementById("playButton").addEventListener("click", () =>
+      api.playAudioForEvent(state.lastEvent)
+    );
+    elements.scheduleBar.addEventListener("scroll", this.handleManualScroll);
+
+    let autoScrollInterval = setInterval(() => this.scrollToCurrentEvent(), 60000);
+    let manualScrollTimeout;
+
+    this.handleManualScroll = () => {
+      clearInterval(autoScrollInterval);
+      autoScrollInterval = setInterval(() => this.scrollToCurrentEvent(), 15000);
+      if (manualScrollTimeout) clearTimeout(manualScrollTimeout);
+      manualScrollTimeout = setTimeout(() => {
+        clearInterval(autoScrollInterval);
+        autoScrollInterval = setInterval(() => this.scrollToCurrentEvent(), 60000);
+      }, 15000);
+    };
+
+    uiUtils.fetchAllData();
+    this.updateWebsite();
+    setInterval(() => this.updateWebsite(), 1000);
+  },
+};

@@ -1,0 +1,215 @@
+.days-container {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* Seven equal columns for days */
+    gap: 10px; /* Space between columns */
+    padding: 20px;
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#completionList li {
+    background: #3542d8;
+}
+
+.day-column {
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+.day-column h3 {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.habit-item {
+    padding: 2px;
+    margin: 1px 0;
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.habit-item .status-buttons {
+    display: flex; /* Horizontal button layout */
+    gap: 3px; /* Space between buttons */
+}
+
+.habit-item .status-button {
+    padding: 2px 6px; /* Small buttons */
+    font-size: 0.8rem; /* Smaller text */
+    border: none; /* No border */
+    border-radius: 3px; /* Rounded corners */
+    cursor: pointer; /* Clickable */
+    color: white; /* White text */
+}
+
+.habit-item .status-button.failed {
+    background-color: #ff4444; /* Red for failed */
+}
+
+.habit-item .status-button.partially-completed {
+    background-color: #ffeb3b; /* Yellow for partially completed */
+    color: #333; /* Dark text for contrast */
+}
+
+.habit-item .status-button.perfectly_completed {
+    background-color: #4CAF50; /* Green for completed */
+}
+
+.habit-item.partially_completed {
+    background: #7bbdf3; /* Yellow for partially completed */
+    color: #333;
+}
+
+.habit-item.completed {
+    background: #af4c4c; /* Green for completed */
+    color: white;
+}
+
+.habit-item.perfectly_completed {
+    background: #2196F3; /* Blue for perfectly completed */
+    color: white;
+}
+
+.habit-item.not-completed {
+    background: #e0e0e0; /* Gray for not completed */
+    color: #666;
+}
+
+.habit-item:hover {
+    opacity: 0.8;
+}
+
+/* Dark mode adjustments (if applicable) */
+@media (prefers-color-scheme: dark) {
+    .days-container, .day-column, .day-column>h3  {
+        background: #2c2c2c;
+        border-color: #444;
+        color: #fff;
+    }
+
+    .habit-item.not-completed {
+        background: #4a4a4a;
+        color: #bbb;
+    }
+}
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 500px; /* Max width for readability */
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.modal-content button {
+    margin: 5px;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.modal-content button:hover {
+    background-color: #0056b3;
+}
+
+/* Ensure habits are clickable */
+.habit-item {
+    cursor: pointer; /* Indicate clickable */
+    padding: 8px;
+    margin: 5px 0;
+    border-radius: 3px;
+    transition: background 0.3s ease;
+}
+
+.habit-item:hover {
+    opacity: 0.8;
+}
+
+/* Dark mode for modal */
+@media (prefers-color-scheme: dark) {
+    .modal-content {
+        background-color: #333;
+        color: #fff;
+        border-color: #555;
+    }
+
+    .modal-content button {
+        background-color: #0062cc;
+    }
+
+    .modal-content button:hover {
+        background-color: #004d99;
+    }
+}
+/* Utility and polish for completions page */
+.section { margin: 20px auto; padding: 0 16px; }
+.section-header { display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.legend { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+.legend-item { font-size: 0.8rem; }
+.status-pill { padding: 2px 8px; border-radius: 999px; color:#fff; }
+.status-pill.failed{ background:#ff4444; }
+.status-pill.partially_completed{ background:#ffb300; color:#222; }
+.status-pill.completed{ background:#4caf50; }
+.status-pill.perfectly_completed{ background:#2196f3; }
+
+.row { display:flex; align-items:center; }
+.gap-sm { gap: 8px; }
+.input { padding:8px; border:1px solid #ccc; border-radius:4px; }
+.card { background:#fff; border:1px solid #e5e5e5; border-radius:6px; padding:12px; margin-top:10px; }
+.list { padding:0; list-style:none; }
+.muted { color:#666; }
+
+.btn { padding:8px 14px; border:none; border-radius:4px; background:#e0e0e0; color:#222; cursor:pointer; }
+.btn:hover { filter: brightness(0.95); }
+.btn.primary { background:#007bff; color:#fff; }
+.btn.outline { background:transparent; border:1px solid #007bff; color:#007bff; }
+.btn.danger { background:#e53935; color:#fff; }
+
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top: 10px; }
+.field { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+
+/* Refine day columns */
+.days-container { align-items: start; }
+.day-column { display:flex; flex-direction:column; gap:8px; }
+.day-column h3 { font-weight:600; }
+
+/* Habit item hover and layout */
+.habit-item { display:flex; justify-content:space-between; align-items:center; }
+.habit-item .title { font-weight:500; }
+.habit-item .meta { font-size:0.8rem; opacity:0.8; margin-left:8px; }
+
+@media (prefers-color-scheme: dark) {
+  .section .card { background:#2a2a2a; border-color:#444; color:#fff; }
+  .btn { background:#444; color:#eee; }
+  .btn.outline { border-color:#66aaff; color:#66aaff; }
+  .muted { color:#aaa; }
+}
+

@@ -1,0 +1,35 @@
+<div id="content">
+    <div id="home" class="page">
+        <div class="container">
+            <div class="main-content">
+                <div class="timer-container">
+                    <div id="timer" class="timer">00:00:00</div>
+                </div>
+                <div class="content-container">
+                    <div id="event-label">No Event</div>
+                    <div class="loading-bar">
+                        <div id="progress-bar"></div>
+                    </div>
+                    <div id="remaining-time">Remaining Time: 00:00:00</div>
+
+                    <div class="audio-player-container">
+                        <button id="playButton">Play Audio</button>
+                        <audio id="audioPlayer" controls style="display: none;"></audio>
+                        <div id="audioPlayerLabel" class="audio-label" style="display: none;"></div>
+                    </div>
+
+                    <div id="completion-buttons" class="completion-buttons">
+                        <button onclick="markHabit('failed')">Failed</button>
+                        <button onclick="markHabit('partially_completed')">Partially Completed</button>
+                        <button onclick="markHabit('perfectly_completed')">Perfectly Completed</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <h3>Schedule</h3>
+                <div id="schedule-bar" class="schedule-bar"></div>
+            </div>
+        </div>
+    </div>
+</div>

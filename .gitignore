@@ -1,0 +1,9 @@
+# Ignore all files within the audio folder
+audio/**
+
+# Optionally keep the folder itself (in case it's needed in repo)
+#!audio/
+
+# Ignore node_modules directory
+node_modules/**
+!node_modules/

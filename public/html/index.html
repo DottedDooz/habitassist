@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HabitAssist</title>
+
+    <!-- Global styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/completions.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="header">
+        <h1>Habit Assist</h1>
+        <button id="index-button" data-page="index">Index</button>
+        <button id="home-button" data-page="home">Home</button>
+        <button id="completions-button" data-page="completions">Completions</button>
+        <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    </div>
+
+        <!-- Page container -->
+    <div id="content">
+            <div id="habitForm">
+            <select id="habitType">
+                <option value="default">Default Habit</option>
+                <option value="day-specific">Day Specific Habit</option>
+            </select>
+            <input type="text" id="eventName" placeholder="Event Name">
+            <input type="time" id="startTime">
+            <input type="time" id="endTime">
+            <select id="dayOfWeek" style="display: none;">
+                <option value="">Select Day</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+            </select>
+            <button onclick="addHabit()">Add Habit</button>
+        </div>
+
+        <div id="habitLists">
+            <h2>Default Habits</h2>
+            <ul id="defaultHabits"></ul>
+
+            <h2>Day-Specific Habits</h2>
+            <ul id="daySpecificHabits"></ul>
+        </div>
+
+    </div>
+
+    <script src="/js/index.js"></script>
+
+    <script type="module" src="js/main.js"></script>
+
+</body>
+</html>

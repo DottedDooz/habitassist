@@ -1,0 +1,48 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    margin: 0 auto;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+#habitForm {
+    margin-bottom: 20px;
+}
+
+#habitForm input, #habitForm select, #habitForm button {
+    margin: 5px;
+    padding: 5px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    background: #f9f9f9;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+li button {
+    margin-left: 10px;
+    padding: 2px 10px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+li button:hover {
+    background: #cc0000;
+}
+
+#defaultHabits li {
+    background: #3542d8;
+}

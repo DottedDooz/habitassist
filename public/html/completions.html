@@ -1,0 +1,54 @@
+<div id="content">
+    <div id="completions" class="page">
+        <div id="habitModal" class="modal">
+            <div class="modal-content">
+                <h3>Habit Actions</h3>
+                <p id="modalHabitName" class="muted"></p>
+                <label class="field">
+                    <span>Status</span>
+                    <select id="completionStatusModal">
+                        <option value="failed">Failed</option>
+                        <option value="partially_completed">Partially Completed</option>
+                        <option value="completed">Completed</option>
+                        <option value="perfectly_completed">Perfectly Completed</option>
+                    </select>
+                </label>
+                <div class="modal-actions">
+                    <button class="btn primary" onclick="updateCompletion()">Save</button>
+                    <button class="btn danger" onclick="deleteCompletion()">Delete</button>
+                    <button class="btn" onclick="closeModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <section id="weeklyHabits" class="section">
+            <div class="section-header">
+                <h2>Weekly Habits</h2>
+                <!--
+                <div class="legend">
+                    <span class="legend-item status-pill failed">Failed</span>
+                    <span class="legend-item status-pill partially_completed">Partial</span>
+                    <span class="legend-item status-pill completed">Done</span>
+                    <span class="legend-item status-pill perfectly_completed">Perfect</span>
+                </div>
+                -->
+            </div>
+            <div id="daysContainer" class="days-container"></div>
+        </section>
+
+        <section id="analyzeDay" class="section">
+            <h2>Analyze Day</h2>
+            <input type="date" id="analysisDate">
+            <button onclick="analyzeDay()">Analyze</button>
+            <div id="analysisResult"></div>
+        </section>
+
+        <section id="completionHistory" class="section">
+            <div class="section-header"><h2>Completion History</h2></div>
+            <ul id="completionList" class="list"></ul>
+        </section>
+    </div>
+
+    
+
+</div>
