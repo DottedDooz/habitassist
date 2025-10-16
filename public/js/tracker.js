@@ -22,12 +22,22 @@ export const trackerTab = {
       .padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
     elements.timer.textContent = timeString;
   },
+  getTodaysSpecificHabits() {
+    const today = new Date().toLocaleString("en-us", { weekday: "long" });
+    return state.habits.daySpecific.filter(
+      (habit) =>
+        habit.day_of_week &&
+        habit.day_of_week.toLowerCase() === today.toLowerCase()
+    );
+  },
   updateEvent() {
     const currentTime = timeUtils.getCurrentTime();
     let currentEvent = "No Event";
     let eventStartTime, eventEndTime;
 
-    for (const event of state.habits.daySpecific) {
+    const todaysSpecificHabits = this.getTodaysSpecificHabits();
+
+    for (const event of todaysSpecificHabits) {
       if (
         currentTime >= event.start_time &&
         currentTime < event.end_time
@@ -103,21 +113,39 @@ export const trackerTab = {
   },
   updateSideProgressBar() {
     elements.scheduleBar.innerHTML = "";
-    const totalDuration = state.habits.default.reduce(
-      (sum, event) => sum + timeUtils.getEventDuration(event),
-      0
-    );
+
+    if (!state.habits.default.length) {
+      elements.scheduleBar.style.removeProperty("height");
+      return;
+    }
+
+    const MIN_SEGMENT_HEIGHT = 72;
+    const PIXELS_PER_MINUTE = 1.6;
+
+    elements.scheduleBar.style.removeProperty("height");
+
+    const todaysSpecificHabits = this.getTodaysSpecificHabits();
 
     state.habits.default.forEach((defaultEvent) => {
       const segment = document.createElement("div");
       segment.className = "schedule-segment";
-      const duration = timeUtils.getEventDuration(defaultEvent);
-      let percentage = (duration / totalDuration) * 100;
-      if (percentage < 1) percentage = 1;
-      segment.style.height = `${percentage}%`;
+      const durationSeconds = Math.max(
+        0,
+        timeUtils.getEventDuration(defaultEvent)
+      );
+      const computedHeight = durationSeconds
+        ? (durationSeconds / 60) * PIXELS_PER_MINUTE
+        : MIN_SEGMENT_HEIGHT;
+      segment.style.height = `${Math.max(
+        MIN_SEGMENT_HEIGHT,
+        computedHeight
+      )}px`;
 
       const elapsedTime = timeUtils.getElapsedTime(defaultEvent);
-      let elapsedPercentage = (elapsedTime / duration) * 100;
+      const duration = timeUtils.getEventDuration(defaultEvent);
+      let elapsedPercentage = duration
+        ? (elapsedTime / duration) * 100
+        : 0;
       if (elapsedPercentage > 100) elapsedPercentage = 100;
 
       const endTimeDiv = document.createElement("div");
@@ -142,7 +170,7 @@ export const trackerTab = {
       defaultLabel.textContent = defaultEvent.event;
       labelContainer.appendChild(defaultLabel);
 
-      state.habits.daySpecific.forEach((specificEvent) => {
+      todaysSpecificHabits.forEach((specificEvent) => {
         if (this.isOverlapping(defaultEvent, specificEvent)) {
           const specificLabel = document.createElement("div");
           specificLabel.className = "segment-label specific-label";
