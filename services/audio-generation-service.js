@@ -163,15 +163,18 @@ const buildMessages = ({ narrator, habit, dayName, isoDate }) => {
 
     const instructions = [
         `Habit: ${habit.event}`,
-        `Schedule: ${scheduleSummary}`,
-        `Habit type: ${habit.type}`,
         stylePrompt,
     ]
         .filter(Boolean)
         .join('\n');
 
+    log("Instructions for TTS script generation:", instructions.replace(/\n/g, ' | '));
+    
+    system_prompt = narrator.role_prompt + " When given a Task, you should respond with a sentence that directs someone to do that Task. For example: 'User': 'Work', 'Your response': 'It's time to get back to work.', but styled in a way that matches your given role."
+    log("System Prompt:", narrator.role_prompt.replace(/\n/g, ' | '));
+
     return [
-        { role: 'system', content: narrator.role_prompt },
+        { role: 'system', content: system_prompt },
         { role: 'user', content: instructions },
     ];
 };
@@ -213,6 +216,7 @@ const generateScriptForHabit = async ({
     log(
         `Script generated for ${habit.type}#${habit.id}: ${Math.min(trimmed.length, 180)} chars (total ${trimmed.length})`,
     );
+    log("Script:", trimmed.replace(/\n/g, ' | '));
     return trimmed;
 };
 
