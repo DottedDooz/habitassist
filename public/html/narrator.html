@@ -1,7 +1,7 @@
 <div id="content">
     <div id="narrator" class="page narrator-page">
         <div class="narrator-grid">
-            <section class="card narrator-card">
+            <section class="card narrator-card grid-profiles">
                 <div class="card-header">
                     <h2>Narrator Profiles</h2>
                     <p>Configure the persona, voice and defaults used for nightly audio generation.</p>
@@ -54,25 +54,7 @@
                 </div>
             </section>
 
-            <section class="card generation-card">
-                <div class="card-header">
-                    <h2>Clip Generation</h2>
-                    <p>Generate or review the audio clips scheduled for a specific date.</p>
-                </div>
-                <div class="card-body">
-                    <div class="generation-controls">
-                        <div class="form-field">
-                            <label for="generationDate">Target date</label>
-                            <input type="date" id="generationDate">
-                        </div>
-                        <button id="generateClipsButton" class="primary-button" type="button">Generate Clips</button>
-                    </div>
-                    <div id="generationSummary" class="generation-summary"></div>
-                    <div id="clipStatusContainer" class="clip-status"></div>
-                </div>
-            </section>
-
-            <section class="card samples-card">
+            <section class="card samples-card grid-samples">
                 <div class="card-header">
                     <h2>Sample Library</h2>
                     <p>Upload new samples or manage existing references for voice cloning.</p>
@@ -93,6 +75,24 @@
                     </form>
                     <p id="sampleStatus" class="form-status"></p>
                     <div id="sampleList" class="sample-list"></div>
+                </div>
+            </section>
+
+            <section class="card generation-card grid-generation">
+                <div class="card-header">
+                    <h2>Clip Generation</h2>
+                    <p>Generate or review the audio clips scheduled for a specific date.</p>
+                </div>
+                <div class="card-body">
+                    <div class="generation-controls">
+                        <div class="form-field">
+                            <label for="generationDate">Target date</label>
+                            <input type="date" id="generationDate">
+                        </div>
+                        <button id="generateClipsButton" class="primary-button" type="button">Generate Clips</button>
+                    </div>
+                    <div id="generationSummary" class="generation-summary"></div>
+                    <div id="clipStatusContainer" class="clip-status"></div>
                 </div>
             </section>
         </div>

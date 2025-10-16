@@ -209,6 +209,15 @@ body.dark-mode .insights-card {
 .completion-habit.status-completed::before { background: var(--status-completed); }
 .completion-habit.status-perfectly_completed::before { background: var(--status-perfectly_completed); }
 
+.completion-habit.is-busy {
+    opacity: 0.7;
+    transition: opacity var(--transition);
+}
+
+.completion-habit.is-busy .status-button {
+    cursor: wait;
+}
+
 .completion-habit__header {
     display: flex;
     justify-content: space-between;

@@ -88,7 +88,7 @@ export const api = {
       }),
     });
     if (!response.ok) throw new Error("Failed to create completion");
-    return response;
+    return await response.json();
   },
   async deleteCompletion(completionId) {
     const response = await fetch(`/api/completions/${completionId}`, {

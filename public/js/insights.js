@@ -37,6 +37,70 @@ export const insightsTab = {
       elements.completionList.classList.toggle("is-loading", isLoading);
     }
   },
+  getHabitCard(habit, completionDate) {
+    if (!elements.daysContainer) return null;
+    return elements.daysContainer.querySelector(
+      `.completion-habit[data-habit-id="${habit.id}"][data-habit-type="${habit.type}"][data-completion-date="${completionDate}"]`
+    );
+  },
+  findCompletionIndex(habit, completionDate) {
+    return state.completions.findIndex(
+      (completion) =>
+        completion.habit_id === habit.id &&
+        completion.habit_type === habit.type &&
+        new Date(completion.completion_date).toISOString().split("T")[0] === completionDate
+    );
+  },
+  getCompletionForHabit(habit, completionDate) {
+    const index = this.findCompletionIndex(habit, completionDate);
+    return index >= 0 ? state.completions[index] : null;
+  },
+  setCardBusy(habit, completionDate, isBusy) {
+    const card = this.getHabitCard(habit, completionDate);
+    if (!card) return;
+    card.classList.toggle("is-busy", isBusy);
+    const buttons = card.querySelectorAll(".status-button");
+    buttons.forEach((button) => {
+      button.disabled = isBusy;
+    });
+  },
+  applyStatusToHabitCard(habit, completionDate, { status, completionId } = {}) {
+    const card = this.getHabitCard(habit, completionDate);
+    if (!card) return;
+
+    const statusClasses = ["status-none", ...Object.keys(statusLabels).map((key) => `status-${key}`)];
+    statusClasses.forEach((className) => card.classList.remove(className));
+
+    const badge = card.querySelector(".status-pill");
+    if (badge) {
+      statusClasses.forEach((className) => badge.classList.remove(className));
+    }
+
+    const hasStatus = Boolean(status);
+    if (hasStatus) {
+      card.classList.add("has-status");
+    } else {
+      card.classList.remove("has-status");
+    }
+
+    const normalizedStatus = hasStatus ? status : "none";
+    const cssClass = `status-${normalizedStatus}`;
+    card.classList.add(cssClass);
+    card.dataset.status = hasStatus ? status : "";
+
+    if (badge) {
+      badge.textContent = hasStatus
+        ? statusLabels[status] || status.replace(/_/g, " ")
+        : "Not completed";
+      badge.classList.add(cssClass);
+    }
+
+    if (hasStatus && completionId) {
+      card.dataset.completionId = String(completionId);
+    } else {
+      delete card.dataset.completionId;
+    }
+  },
   displayWeeklyHabits() {
     elements.daysContainer.innerHTML = "";
     const daysOfWeek = [
@@ -79,20 +143,22 @@ export const insightsTab = {
         habitItem.className = "completion-habit";
         habitItem.dataset.habitId = habit.id;
         habitItem.dataset.habitType = habit.type;
+        habitItem.dataset.day = habit.day;
 
         const completionDate = timeUtils.getDateForDay(habit.day);
-        const completion = state.completions.find(
-          (c) =>
-            c.habit_id === habit.id &&
-            c.habit_type === habit.type &&
-            new Date(c.completion_date).toISOString().split("T")[0] === completionDate
-        );
+        habitItem.dataset.completionDate = completionDate;
+
+        const completion = this.getCompletionForHabit(habit, completionDate);
+        if (completion) {
+          habitItem.dataset.completionId = completion.id;
+        }
 
         const statusClass = completion ? `status-${completion.status}` : "status-none";
         habitItem.classList.add(statusClass);
         if (completion) {
           habitItem.classList.add("has-status");
         }
+        habitItem.dataset.status = completion ? completion.status : "";
 
         const header = document.createElement("div");
         header.className = "completion-habit__header";
@@ -134,7 +200,7 @@ export const insightsTab = {
           button.title = `Mark as ${statusLabels[key] || key.replace("_", " ")}`;
           button.addEventListener("click", (event) => {
             event.stopPropagation();
-            this.updateHabitCompletion(habit, completion, key, completionDate);
+            this.updateHabitCompletion({ habit, status: key, completionDate });
           });
           buttonContainer.appendChild(button);
         });
@@ -145,9 +211,7 @@ export const insightsTab = {
         habitItem.appendChild(header);
         habitItem.appendChild(footer);
         habitItem.appendChild(buttonContainer);
-        habitItem.addEventListener("click", () =>
-          this.showModal(habit, completion)
-        );
+        habitItem.addEventListener("click", () => this.showModal(habit));
         dayColumn.appendChild(habitItem);
       });
 
@@ -221,37 +285,89 @@ export const insightsTab = {
         elements.completionList.appendChild(item);
       });
   },
-  async updateHabitCompletion(habit, existingCompletion, status, completionDate) {
+  async updateHabitCompletion({ habit, status, completionDate, silent = false }) {
+    const completionDateTime = new Date(
+      new Date(completionDate).setTime(new Date().getTime())
+    );
+    const existingIndex = this.findCompletionIndex(habit, completionDate);
+    const existingCompletion =
+      existingIndex >= 0 ? { ...state.completions[existingIndex] } : null;
+    const previousStatus = existingCompletion?.status || null;
+    const previousCompletionId = existingCompletion?.id || null;
+    let success = false;
+
+    this.setCardBusy(habit, completionDate, true);
+
     try {
-      this.toggleLoading(true);
-      const completionDateTime = new Date(
-        new Date(completionDate).setTime(new Date().getTime())
-      );
-      if (existingCompletion) {
-        await api.updateCompletion(existingCompletion.id, status, completionDateTime);
+      let completionRecord = null;
+      if (existingIndex >= 0) {
+        state.completions[existingIndex] = {
+          ...state.completions[existingIndex],
+          status,
+          completion_date: completionDateTime.toISOString(),
+        };
+        await api.updateCompletion(
+          state.completions[existingIndex].id,
+          status,
+          completionDateTime
+        );
+        completionRecord = state.completions[existingIndex];
       } else {
-        await api.createCompletion(habit, status, completionDateTime);
+        const response = await api.createCompletion(
+          habit,
+          status,
+          completionDateTime
+        );
+        const completionId = response?.id;
+        completionRecord = {
+          id: completionId,
+          habit_id: habit.id,
+          habit_type: habit.type,
+          status,
+          completion_date: completionDateTime.toISOString(),
+        };
+        if (completionId) {
+          state.completions.push(completionRecord);
+        }
       }
-      await uiUtils.fetchAllData();
-      this.displayWeeklyHabits();
+
+      this.applyStatusToHabitCard(habit, completionDate, {
+        status,
+        completionId: completionRecord?.id,
+      });
+
+      if (
+        state.selectedHabit &&
+        state.selectedHabit.id === habit.id &&
+        state.selectedHabit.type === habit.type &&
+        state.selectedHabit.day === habit.day
+      ) {
+        state.selectedHabit.completion = completionRecord;
+      }
+
       this.updateCompletionHistory();
+      success = true;
     } catch (error) {
+      if (existingIndex >= 0) {
+        state.completions[existingIndex] = existingCompletion;
+      }
+      this.applyStatusToHabitCard(habit, completionDate, {
+        status: previousStatus,
+        completionId: previousCompletionId,
+      });
+      this.updateCompletionHistory();
       console.error("Error updating completion:", error);
-      alert("An error occurred");
+      if (!silent) {
+        alert("An error occurred");
+      }
     } finally {
-      this.toggleLoading(false);
+      this.setCardBusy(habit, completionDate, false);
     }
+    return success;
   },
-  showModal(habit, completion) {
+  showModal(habit) {
     const completionDate = timeUtils.getDateForDay(habit.day);
-    const latestCompletion =
-      completion ||
-      state.completions.find(
-        (c) =>
-          c.habit_id === habit.id &&
-          c.habit_type === habit.type &&
-          new Date(c.completion_date).toISOString().split("T")[0] === completionDate
-      );
+    const latestCompletion = this.getCompletionForHabit(habit, completionDate);
 
     state.selectedHabit = { ...habit, completion: latestCompletion };
     elements.modalHabitName.textContent = `${habit.event} (${habit.start_time} – ${habit.end_time}) on ${habit.day}`;
@@ -269,31 +385,15 @@ export const insightsTab = {
     const status = elements.completionStatusModal.value;
     const habit = state.selectedHabit;
     const completionDate = timeUtils.getDateForDay(habit.day);
-    const completionDateTime = new Date(
-      new Date(completionDate).setTime(new Date().getTime())
-    );
-
-    try {
-      this.toggleLoading(true);
-      if (state.selectedHabit.completion) {
-        await api.updateCompletion(
-          state.selectedHabit.completion.id,
-          status,
-          completionDateTime
-        );
-      } else {
-        await api.createCompletion(habit, status, completionDateTime);
-      }
-      await uiUtils.fetchAllData();
-      this.displayWeeklyHabits();
-      this.updateCompletionHistory();
+    const success = await this.updateHabitCompletion({
+      habit,
+      status,
+      completionDate,
+      silent: true,
+    });
+    if (success) {
       this.closeModal();
       alert("Completion updated successfully!");
-    } catch (error) {
-      console.error("Error updating completion:", error);
-      alert("An error occurred");
-    } finally {
-      this.toggleLoading(false);
     }
   },
   async deleteCompletion() {
@@ -301,11 +401,27 @@ export const insightsTab = {
       alert("No completion to delete");
       return;
     }
+    const habitSnapshot = { ...state.selectedHabit };
+    const completionId = habitSnapshot.completion.id;
+    const completionDate = timeUtils.getDateForDay(habitSnapshot.day);
     try {
-      this.toggleLoading(true);
-      await api.deleteCompletion(state.selectedHabit.completion.id);
-      await uiUtils.fetchAllData();
-      this.displayWeeklyHabits();
+      this.setCardBusy(habitSnapshot, completionDate, true);
+      await api.deleteCompletion(completionId);
+      state.completions = state.completions.filter(
+        (item) => item.id !== completionId
+      );
+      if (
+        state.selectedHabit &&
+        state.selectedHabit.id === habitSnapshot.id &&
+        state.selectedHabit.type === habitSnapshot.type &&
+        state.selectedHabit.day === habitSnapshot.day
+      ) {
+        state.selectedHabit.completion = null;
+      }
+      this.applyStatusToHabitCard(habitSnapshot, completionDate, {
+        status: null,
+        completionId: null,
+      });
       this.updateCompletionHistory();
       this.closeModal();
       alert("Completion deleted successfully!");
@@ -313,7 +429,7 @@ export const insightsTab = {
       console.error("Error deleting completion:", error);
       alert("An error occurred");
     } finally {
-      this.toggleLoading(false);
+      this.setCardBusy(habitSnapshot, completionDate, false);
     }
   },
   async loadMoreCompletions() {

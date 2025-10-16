@@ -143,6 +143,7 @@ const buildMessages = ({ narrator, habit, dayName, isoDate }) => {
         ? `\n\nStyle guidance: ${narrator.style_prompt.trim()}`
         : '';
 
+    /*
     const instructions = [
         `Craft a short spoken line for the upcoming habit below.`,
         `Date: ${isoDate} (${dayName})`,
@@ -154,6 +155,16 @@ const buildMessages = ({ narrator, habit, dayName, isoDate }) => {
         `- Use a warm second-person tone.`,
         `- Keep it to 1-2 sentences.`,
         `- Reference the habit or its timing explicitly.`,
+        stylePrompt,
+    ]
+        .filter(Boolean)
+        .join('\n');
+    */
+
+    const instructions = [
+        `Habit: ${habit.event}`,
+        `Schedule: ${scheduleSummary}`,
+        `Habit type: ${habit.type}`,
         stylePrompt,
     ]
         .filter(Boolean)
