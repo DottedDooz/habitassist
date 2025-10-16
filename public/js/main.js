@@ -1,5 +1,6 @@
 import { trackerTab } from './tracker.js';
 import { insightsTab } from './insights.js';
+import { narratorPage } from './narrator.js';
 import { toggleDarkMode, uiUtils } from './utils.js';
 
 const initTabs = () => {
@@ -12,6 +13,12 @@ const initTabs = () => {
     document.getElementById('insights-button').addEventListener('click', () => {
         loadPage('/insights', true);
     });
+    const narratorButton = document.getElementById('narrator-button');
+    if (narratorButton) {
+        narratorButton.addEventListener('click', () => {
+            loadPage('/narrator', true);
+        });
+    }
 };
 
 if (localStorage.getItem('theme') === 'dark') {
@@ -27,7 +34,7 @@ const updateNavActiveState = (page) => {
 };
 
 const setPageContext = (page) => {
-    document.body.classList.remove('page--planner', 'page--tracker', 'page--insights');
+    document.body.classList.remove('page--planner', 'page--tracker', 'page--insights', 'page--narrator');
     if (page) {
         document.body.classList.add(`page--${page}`);
     }
@@ -37,6 +44,7 @@ const setPageContext = (page) => {
 const detectInitialPage = () => {
     if (document.querySelector('#insights')) return 'insights';
     if (document.querySelector('#tracker')) return 'tracker';
+    if (document.querySelector('#narrator')) return 'narrator';
     return 'planner';
 };
 
@@ -50,6 +58,8 @@ const init = () => {
         trackerTab.init();
     } else if (initialPage === 'insights') {
         insightsTab.init();
+    } else if (initialPage === 'narrator') {
+        narratorPage.init();
     }
     // trackerTab.init(); // Start with tracker tab
 };
@@ -72,6 +82,9 @@ async function loadPage(path, push = true) {
     } else if (path === '/insights' || path === '/completions') {
         pageUrl = '/insights';
         targetPage = 'insights';
+    } else if (path === '/narrator') {
+        pageUrl = '/narrator';
+        targetPage = 'narrator';
     } else {
         console.warn('Unknown path, loading planner');
         pageUrl = '/planner';
@@ -92,6 +105,8 @@ async function loadPage(path, push = true) {
                 trackerTab.init();
             } else if (targetPage === 'insights') {
                 insightsTab.init();
+            } else if (targetPage === 'narrator') {
+                narratorPage.init();
             }
             // if (push) history.pushState({}, '', path);
         } else {

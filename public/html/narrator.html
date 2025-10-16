@@ -1,0 +1,100 @@
+<div id="content">
+    <div id="narrator" class="page narrator-page">
+        <div class="narrator-grid">
+            <section class="card narrator-card">
+                <div class="card-header">
+                    <h2>Narrator Profiles</h2>
+                    <p>Configure the persona, voice and defaults used for nightly audio generation.</p>
+                </div>
+                <div class="card-body">
+                    <div id="narratorList" class="narrator-list"></div>
+                    <form id="narratorForm" class="narrator-form">
+                        <input type="hidden" id="narratorId">
+                        <div class="form-field">
+                            <label for="narratorName">Narrator name</label>
+                            <input type="text" id="narratorName" placeholder="Ranni the Witch">
+                        </div>
+                        <div class="form-field">
+                            <label for="rolePrompt">Role prompt</label>
+                            <textarea id="rolePrompt" rows="4" placeholder="Describe the narrator's persona and tone."></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label for="stylePrompt">Style guidance</label>
+                            <textarea id="stylePrompt" rows="3" placeholder="Optional reminders for the narrator (energy level, pacing, etc.)"></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label for="narratorVoice">Voice preset</label>
+                            <input type="text" id="narratorVoice" placeholder="ranni_full">
+                        </div>
+                        <div class="form-field">
+                            <label for="narratorSampleSelect">Sample library</label>
+                            <select id="narratorSampleSelect">
+                                <option value="">No sample</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="narratorSamplePath">Sample path (override)</label>
+                            <input type="text" id="narratorSamplePath" placeholder="audio/narrator-samples/example.wav">
+                        </div>
+                        <div class="form-field">
+                            <label for="narratorTemperature">Creativity</label>
+                            <input type="number" id="narratorTemperature" step="0.1" min="0" max="2" value="0.7">
+                        </div>
+                        <div class="form-field form-field--inline">
+                            <label for="narratorIsDefault">
+                                <input type="checkbox" id="narratorIsDefault">
+                                Set as nightly default
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button id="narratorFormSubmit" class="primary-button" type="submit">Create Narrator</button>
+                            <button id="narratorFormReset" class="secondary-button" type="button">Reset</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="card generation-card">
+                <div class="card-header">
+                    <h2>Clip Generation</h2>
+                    <p>Generate or review the audio clips scheduled for a specific date.</p>
+                </div>
+                <div class="card-body">
+                    <div class="generation-controls">
+                        <div class="form-field">
+                            <label for="generationDate">Target date</label>
+                            <input type="date" id="generationDate">
+                        </div>
+                        <button id="generateClipsButton" class="primary-button" type="button">Generate Clips</button>
+                    </div>
+                    <div id="generationSummary" class="generation-summary"></div>
+                    <div id="clipStatusContainer" class="clip-status"></div>
+                </div>
+            </section>
+
+            <section class="card samples-card">
+                <div class="card-header">
+                    <h2>Sample Library</h2>
+                    <p>Upload new samples or manage existing references for voice cloning.</p>
+                </div>
+                <div class="card-body">
+                    <form id="sampleUploadForm" class="sample-form">
+                        <div class="form-field">
+                            <label for="sampleLabel">Label</label>
+                            <input type="text" id="sampleLabel" placeholder="Optional name">
+                        </div>
+                        <div class="form-field">
+                            <label for="sampleFile">Audio sample</label>
+                            <input type="file" id="sampleFile" accept="audio/*">
+                        </div>
+                        <div class="form-actions">
+                            <button class="secondary-button" type="submit">Upload sample</button>
+                        </div>
+                    </form>
+                    <p id="sampleStatus" class="form-status"></p>
+                    <div id="sampleList" class="sample-list"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>

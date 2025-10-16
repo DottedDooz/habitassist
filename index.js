@@ -1,9 +1,13 @@
+require('dotenv').config();
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser');
 const scheduleRouter = require('./api/schedule');
 const audioRouter = require('./api/audio');
+const narratorRouter = require('./api/narrators');
+const { scheduleNightlyGeneration } = require('./services/audio-generation-service');
 
 const app = express();
 
@@ -80,6 +84,17 @@ app.get('/insights', (req, res) => {
     });
 });
 
+app.get('/narrator', (req, res) => {
+    const filePath = path.join(htmlDir, 'narrator.html');
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            res.status(500).send('Error reading the narrator.html file');
+            return;
+        }
+        res.send(data);
+    });
+});
+
 app.get('/completions', (req, res) => {
     const filePath = path.join(htmlDir, 'insights.html');
     fs.readFile(filePath, 'utf8', (err, data) => {
@@ -97,6 +112,10 @@ app.use(express.static('public'));
 // Use the API routes
 app.use('/api', scheduleRouter);
 app.use('/api', audioRouter);
+app.use('/api', narratorRouter);
+
+// Schedule nightly audio generation at 1 AM local time
+scheduleNightlyGeneration();
 // Start the server and listen on port 3000
 const port = 3001;
 app.listen(port, () => {

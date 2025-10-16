@@ -10,7 +10,8 @@ export const state = {
     hasMore: false,
   },
   selectedHabit: null,
-  lastEvent: "",
+  lastHabitKey: null,
+  lastHabit: null,
 };
 
 const HABIT_WATCHER_INTERVAL_MS = 5000;
@@ -96,18 +97,110 @@ export const api = {
     if (!response.ok) throw new Error("Failed to delete completion");
     return response;
   },
-  async playAudioForEvent(event) {
+  async playAudioForHabit(habit, { date } = {}) {
+    if (!habit || !habit.id || !habit.type) {
+      console.warn("Attempted to play audio without a valid habit", habit);
+      return;
+    }
     try {
-      const response = await fetch(`/api/audio/${event}`);
+      const params = new URLSearchParams();
+      if (date) params.set("date", date);
+      const query = params.toString();
+      const url = query
+        ? `/api/audio/habit/${habit.type}/${habit.id}?${query}`
+        : `/api/audio/habit/${habit.type}/${habit.id}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch audio");
       const blob = await response.blob();
       const audioUrl = URL.createObjectURL(blob);
       const audioPlayer = ensureAudioPlayer();
       audioPlayer.src = audioUrl;
-      audioPlayer.play();
+      await audioPlayer.play();
     } catch (error) {
       console.error("Error playing audio:", error);
     }
+  },
+  async fetchNarrators() {
+    const response = await fetch("/api/narrators");
+    if (!response.ok) throw new Error("Failed to load narrators");
+    return await response.json();
+  },
+  async createNarrator(payload) {
+    const response = await fetch("/api/narrators", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Failed to create narrator");
+    return await response.json();
+  },
+  async updateNarrator(id, payload) {
+    const response = await fetch(`/api/narrators/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Failed to update narrator");
+    return await response.json();
+  },
+  async deleteNarrator(id) {
+    const response = await fetch(`/api/narrators/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to delete narrator");
+    return await response.json();
+  },
+  async setDefaultNarrator(id) {
+    const response = await fetch(`/api/narrators/${id}/default`, {
+      method: "POST",
+    });
+    if (!response.ok) throw new Error("Failed to set default narrator");
+    return await response.json();
+  },
+  async generateNarratorClips(id, date) {
+    const response = await fetch(`/api/narrators/${id}/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date }),
+    });
+    if (!response.ok) throw new Error("Failed to generate audio clips");
+    return await response.json();
+  },
+  async fetchNarratorSamples() {
+    const response = await fetch("/api/narrator-samples");
+    if (!response.ok) throw new Error("Failed to load narrator samples");
+    return await response.json();
+  },
+  async uploadNarratorSample(formData) {
+    const response = await fetch("/api/narrator-samples", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Failed to upload narrator sample");
+    return await response.json();
+  },
+  async deleteNarratorSample(id, { removeFile = false } = {}) {
+    const params = new URLSearchParams();
+    if (removeFile) params.set("removeFile", "true");
+    const query = params.toString();
+    const url = query
+      ? `/api/narrator-samples/${id}?${query}`
+      : `/api/narrator-samples/${id}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("Failed to delete narrator sample");
+    return await response.json();
+  },
+  async fetchClipSummary(date) {
+    const params = new URLSearchParams();
+    if (date) params.set("date", date);
+    const query = params.toString();
+    const response = await fetch(
+      query ? `/api/audio/clips?${query}` : "/api/audio/clips"
+    );
+    if (!response.ok) throw new Error("Failed to load audio clips");
+    return await response.json();
   },
   async analyzeDay(date, autoRun = false) {
     try {
@@ -276,11 +369,13 @@ export const uiUtils = {
       setInterval(() => api.analyzeDay(timeUtils.getTodayDate(), true), 24 * 60 * 60 * 1000);
     }, timeUntilTarget);
   },
-  async handleHabitChange(eventName, { playAudio = true } = {}) {
-    if (state.lastEvent === eventName) return;
-    state.lastEvent = eventName;
-    if (!playAudio) return;
-    await api.playAudioForEvent(eventName);
+  async handleHabitChange(habit, { playAudio = true } = {}) {
+    const habitKey = habit ? `${habit.type}-${habit.id}` : "none";
+    if (state.lastHabitKey === habitKey) return;
+    state.lastHabitKey = habitKey;
+    state.lastHabit = habit || null;
+    if (!playAudio || !habit) return;
+    await api.playAudioForHabit(habit);
   },
   startHabitWatcher() {
     if (habitWatcherIntervalId) return;
@@ -295,10 +390,7 @@ export const uiUtils = {
         state.habits.daySpecific = specificSchedule || [];
 
         const currentHabit = this.getCurrentHabit();
-        const currentEvent = currentHabit ? currentHabit.event : "No Event";
-        const isTrackerPageActive = document.body.classList.contains("page--tracker");
-        if (isTrackerPageActive) return;
-        await this.handleHabitChange(currentEvent);
+        await this.handleHabitChange(currentHabit);
       } catch (error) {
         console.error("Error monitoring habit changes:", error);
       }

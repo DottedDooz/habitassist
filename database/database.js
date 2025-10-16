@@ -71,54 +71,118 @@ db.serialize(() => {
         });
     });
 
-    db.run("DELETE FROM event_audio", (err) => {});
-    // Create default_schedule table
-    db.run("CREATE TABLE IF NOT EXISTS event_audio (id INTEGER PRIMARY KEY AUTOINCREMENT, event TEXT, count INTEGER, dir TEXT)", (err) => {
+    db.run(`
+        CREATE TABLE IF NOT EXISTS narrators (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            role_prompt TEXT NOT NULL,
+            style_prompt TEXT,
+            voice TEXT,
+            sample_path TEXT,
+            temperature REAL DEFAULT 0.7,
+            is_default INTEGER NOT NULL DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `, (err) => {
         if (err) {
-            console.error("Error creating event_audio table:", err);
+            console.error("Error creating narrators table:", err);
             return;
         }
 
-        // Check if the event_audio table is empty
-        db.get("SELECT COUNT(*) as count FROM event_audio", (err, row) => {
-            if (err) {
-                console.error("Error querying event_audio table:", err);
+        db.all("PRAGMA table_info(narrators)", (pragmaErr, columns) => {
+            if (pragmaErr) {
+                console.error("Error inspecting narrators table:", pragmaErr);
+                return;
+            }
+            const hasDefaultColumn = Array.isArray(columns)
+                ? columns.some((column) => column.name === "is_default")
+                : false;
+            if (!hasDefaultColumn) {
+                db.run(
+                    "ALTER TABLE narrators ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0",
+                    (alterErr) => {
+                        if (alterErr) {
+                            console.error("Error adding is_default column to narrators:", alterErr);
+                        }
+                    }
+                );
+            }
+        });
+
+        db.get("SELECT COUNT(*) as count FROM narrators", (countErr, row) => {
+            if (countErr) {
+                console.error("Error querying narrators table:", countErr);
                 return;
             }
 
-            if (row.count === 0) {
-                // Insert default audio entries if the table is empty
-                console.log("creating event audio");
-                const stmt = db.prepare("INSERT INTO event_audio (event, count, dir) VALUES (?, ?, ?)");
-                const defaultEvents = [
-                    { event: "Sleep", count: 22, dir: "Sleep"},
-                    { event: "Wake up", count: 10, dir: "Wake up" },
-                    { event: "Shower", count: 10, dir: "Shower" },
-                    { event: "Get dressed (new clothes)", count: 10, dir: "Get dressed (new clothes)" },
-                    { event: "Leisure", count: 20, dir: "Leisure" },
-                    { event: "Work", count: 70, dir: "Work" },
-                    { event: "Prepare Lunch", count: 10, dir: "Prepare Lunch" },
-                    { event: "Feed Cat", count: 30, dir: "Feed Cat" },
-                    { event: "Have Lunch", count: 10, dir: "Have Lunch"},
-                    { event: "Exercise", count: 90, dir: "Exercise" },
-                    { event: "Listen to Book", count: 10, dir: "Listen to Book"},
-                    { event: "Gardening", count: 10, dir: "Gardening" },
-                    { event: "Work on Game", count: 10, dir: "Work on Game" },
-                    { event: "Prepare Dinner", count: 10, dir: "Prepare Dinner" },
-                    { event: "Eat Dinner", count: 9, dir: "Eat Dinner" },
-                    { event: "Brush Teeth", count: 20, dir: "Brush Teeth" },
-                    { event: "Clean Up", count: 10, dir: "Clean Up" }
-                ];
-
-                defaultEvents.forEach(({ event, count, dir }) => {
-                    stmt.run(event, count, dir, (err) => {
-                        if (err) {
-                            console.error("Error inserting default audio:", err);
+            if ((row?.count ?? 0) === 0) {
+                const stmt = db.prepare(`
+                    INSERT INTO narrators (name, role_prompt, style_prompt, voice, sample_path, temperature, is_default)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                `);
+                stmt.run(
+                    "Default Narrator",
+                    "You are a thoughtful and encouraging guide helping the user stay on track with their habits.",
+                    "Keep messages concise, optimistic, and grounded in the current habit.",
+                    "ranni_full",
+                    null,
+                    0.7,
+                    1,
+                    (insertErr) => {
+                        if (insertErr) {
+                            console.error("Error inserting default narrator:", insertErr);
+                        } else {
+                            console.log("Inserted default narrator.");
                         }
-                    });
-                });
+                    }
+                );
                 stmt.finalize();
-                console.log("Inserted default audio.");
+            }
+        });
+    });
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS narrator_samples (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            label TEXT NOT NULL,
+            file_path TEXT NOT NULL UNIQUE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `, (err) => {
+        if (err) {
+            console.error("Error creating narrator_samples table:", err);
+        }
+    });
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS habit_audio_clips (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            habit_id INTEGER NOT NULL,
+            habit_type TEXT NOT NULL CHECK(habit_type IN ('default', 'day-specific')),
+            scheduled_date TEXT NOT NULL,
+            narrator_id INTEGER NOT NULL,
+            script TEXT NOT NULL,
+            audio_path TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'ready',
+            error_message TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(habit_id, habit_type, scheduled_date),
+            FOREIGN KEY (narrator_id) REFERENCES narrators(id) ON DELETE CASCADE
+        )
+    `, (err) => {
+        if (err) {
+            console.error("Error creating habit_audio_clips table:", err);
+            return;
+        }
+
+        db.run(`
+            CREATE INDEX IF NOT EXISTS idx_habit_audio_clips_lookup
+            ON habit_audio_clips (scheduled_date, habit_type, habit_id)
+        `, (indexErr) => {
+            if (indexErr) {
+                console.error("Error creating index for habit_audio_clips:", indexErr);
             }
         });
     });

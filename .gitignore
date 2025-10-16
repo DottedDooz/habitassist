@@ -7,3 +7,6 @@ audio/**
 # Ignore node_modules directory
 node_modules/**
 !node_modules/
+
+# Environment configuration
+.env

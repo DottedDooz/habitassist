@@ -1,106 +1,21 @@
 const express = require('express');
-const db = require('../database/database');
 const axios = require('axios');
 const fs = require('fs').promises;
+const { all, get, run } = require('../lib/db-helpers');
+const {
+    DAY_ORDER,
+    VALID_HABIT_TYPES,
+    VALID_COMPLETION_STATUSES,
+    getCurrentDayName,
+    resolveDayFilter,
+    fetchDefaultSchedule,
+    fetchDaySpecificSchedule,
+    fetchCombinedScheduleForDay,
+} = require('../lib/schedule-store');
 
 const router = express.Router();
 
 require('dotenv').config();
-
-const DAY_ORDER = [
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-    'sunday',
-];
-
-const VALID_HABIT_TYPES = ['default', 'day-specific'];
-const VALID_COMPLETION_STATUSES = [
-    'failed',
-    'partially_completed',
-    'completed',
-    'perfectly_completed',
-];
-
-// --- Database helpers -----------------------------------------------------
-const all = (sql, params = []) =>
-    new Promise((resolve, reject) => {
-        db.all(sql, params, (err, rows) => {
-            if (err) return reject(err);
-            resolve(rows);
-        });
-    });
-
-const get = (sql, params = []) =>
-    new Promise((resolve, reject) => {
-        db.get(sql, params, (err, row) => {
-            if (err) return reject(err);
-            resolve(row);
-        });
-    });
-
-const run = (sql, params = []) =>
-    new Promise((resolve, reject) => {
-        db.run(sql, params, function onRun(err) {
-            if (err) return reject(err);
-            resolve({ id: this.lastID, changes: this.changes });
-        });
-    });
-
-const getCurrentDayName = () =>
-    new Date().toLocaleString('en-us', { weekday: 'long' });
-
-const capitalize = (value) =>
-    value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-
-const resolveDayFilter = (rawValue) => {
-    if (rawValue === undefined) return null; // default: return all days
-    const normalized = String(rawValue).trim().toLowerCase();
-    if (!normalized || normalized === 'all') return null;
-
-    const dayToken = ['today', 'current'].includes(normalized)
-        ? getCurrentDayName().toLowerCase()
-        : normalized;
-
-    if (!DAY_ORDER.includes(dayToken)) {
-        throw new Error('Invalid day parameter');
-    }
-
-    return capitalize(dayToken);
-};
-
-const sortByStartTime = (items) =>
-    [...items].sort((a, b) => a.start_time.localeCompare(b.start_time));
-
-const sortDaySpecificSchedule = (items) =>
-    [...items].sort((a, b) => {
-        const dayDiff =
-            DAY_ORDER.indexOf(a.day_of_week.toLowerCase()) -
-            DAY_ORDER.indexOf(b.day_of_week.toLowerCase());
-        if (dayDiff !== 0) return dayDiff;
-        return a.start_time.localeCompare(b.start_time);
-    });
-
-const fetchDefaultSchedule = async () =>
-    sortByStartTime(await all('SELECT * FROM default_schedule'));
-
-const fetchDaySpecificSchedule = async (dayFilter = null) => {
-    if (dayFilter) {
-        return sortByStartTime(
-            await all(
-                'SELECT * FROM day_specific_schedule WHERE lower(day_of_week) = lower(?)',
-                [dayFilter],
-            ),
-        );
-    }
-
-    return sortDaySpecificSchedule(
-        await all('SELECT * FROM day_specific_schedule'),
-    );
-};
 
 const handleUnexpectedError = (res, error, message = 'Internal server error') => {
     console.error(message, error);
@@ -133,18 +48,9 @@ router.get('/schedule/day-specific', async (req, res) => {
 
 router.get('/schedule/combined', async (req, res) => {
     try {
-        const dayFilter =
+        const resolvedDay =
             resolveDayFilter(req.query.day) ?? getCurrentDayName();
-        const [daySpecific, defaults] = await Promise.all([
-            fetchDaySpecificSchedule(dayFilter),
-            fetchDefaultSchedule(),
-        ]);
-
-        const schedule = sortByStartTime([
-            ...daySpecific,
-            ...defaults.map((habit) => ({ ...habit, day_of_week: null })),
-        ]);
-
+        const schedule = await fetchCombinedScheduleForDay(resolvedDay);
         res.json({ schedule });
     } catch (error) {
         if (error.message === 'Invalid day parameter') {

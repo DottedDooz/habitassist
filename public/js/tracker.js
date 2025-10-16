@@ -260,9 +260,13 @@ export const trackerTab = {
 
     const playButton = document.getElementById("playButton");
     if (playButton) {
-      playButton.addEventListener("click", () =>
-        api.playAudioForEvent(state.lastEvent)
-      );
+      playButton.addEventListener("click", () => {
+        if (state.lastHabit) {
+          api.playAudioForHabit(state.lastHabit);
+        } else {
+          console.warn("No habit selected to play audio for.");
+        }
+      });
     }
     elements.scheduleBar?.addEventListener("scroll", this.handleManualScroll);
 
