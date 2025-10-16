@@ -230,7 +230,7 @@ const ensureTtsServer = async () => {
     }
 };
 
-const waitForFile = async (filePath, timeoutMs = 15000, pollMs = 250) => {
+const waitForFile = async (filePath, timeoutMs = 150000, pollMs = 250) => {
     const maxChecks = Math.ceil(timeoutMs / pollMs);
     for (let i = 0; i < maxChecks; i += 1) {
         try {
