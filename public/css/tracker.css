@@ -241,10 +241,10 @@
     color: var(--text-secondary);
     display: flex;
     justify-content: flex-end;
-    align-items: flex-start;
+    align-items: flex-end;
+    align-self: end;
     font-weight: 600;
     white-space: nowrap;
-    padding: 16px 0;
 }
 
 .segment-content {
