@@ -2,6 +2,7 @@
 export const state = {
   schedule: [],
   habits: { default: [], daySpecific: [] },
+  habitsLoaded: false,
   completions: [],
   completionsPage: {
     limit: 25,
@@ -16,6 +17,19 @@ export const state = {
 
 const HABIT_WATCHER_INTERVAL_MS = 5000;
 let habitWatcherIntervalId = null;
+
+const applyScheduleUpdate = (
+  defaultSchedule = [],
+  daySpecificSchedule = []
+) => {
+  state.habits.default = Array.isArray(defaultSchedule)
+    ? defaultSchedule
+    : [];
+  state.habits.daySpecific = Array.isArray(daySpecificSchedule)
+    ? daySpecificSchedule
+    : [];
+  state.habitsLoaded = true;
+};
 
 const ensureAudioPlayer = () => {
   let audioPlayer = document.getElementById("audioPlayer");
@@ -308,8 +322,7 @@ export const uiUtils = {
           api.fetchSpecificSchedule(),
           api.fetchCompletions(),
         ]);
-      state.habits.default = defaultSchedule || [];
-      state.habits.daySpecific = specificSchedule || [];
+      applyScheduleUpdate(defaultSchedule, specificSchedule);
       const completionPayload = completionData || {};
       state.completions = completionPayload.completions || [];
       state.completionsPage = {
@@ -319,9 +332,16 @@ export const uiUtils = {
         hasMore: completionPayload.hasMore ?? false,
       };
     } catch (error) {
-      console.error("Error fetching schedules:", error);
-      alert("Failed to load schedules. Please try again.");
+      console.error("Error fetching data:", error);
+      alert("Failed to load data. Please try again.");
     }
+  },
+  async loadSchedules() {
+    const [defaultSchedule, specificSchedule] = await Promise.all([
+      api.fetchDefaultSchedule(),
+      api.fetchSpecificSchedule(),
+    ]);
+    applyScheduleUpdate(defaultSchedule, specificSchedule);
   },
   getCurrentHabit() {
     const now = new Date();
@@ -382,13 +402,9 @@ export const uiUtils = {
 
     const checkForHabitChange = async () => {
       try {
-        const [defaultSchedule, specificSchedule] = await Promise.all([
-          api.fetchDefaultSchedule(),
-          api.fetchSpecificSchedule(),
-        ]);
-        state.habits.default = defaultSchedule || [];
-        state.habits.daySpecific = specificSchedule || [];
-
+        if (!state.habitsLoaded) {
+          await this.loadSchedules();
+        }
         const currentHabit = this.getCurrentHabit();
         await this.handleHabitChange(currentHabit);
       } catch (error) {
@@ -402,6 +418,20 @@ export const uiUtils = {
       HABIT_WATCHER_INTERVAL_MS
     );
   },
+};
+
+window.habitAssist = window.habitAssist || {};
+window.habitAssist.syncSchedules = ({
+  defaultSchedule = [],
+  daySpecificSchedule = [],
+} = {}) => {
+  applyScheduleUpdate(defaultSchedule, daySpecificSchedule);
+  const currentHabit = uiUtils.getCurrentHabit();
+  uiUtils
+    .handleHabitChange(currentHabit, { playAudio: false })
+    .catch((error) =>
+      console.error("Error handling habit change after schedule sync:", error)
+    );
 };
 
 export const toggleDarkMode = () => {

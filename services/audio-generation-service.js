@@ -500,7 +500,11 @@ const scheduleNightlyGeneration = ({ narratorId } = {}) => {
             log('Nightly audio generation triggered.');
             try {
                 const today = new Date();
-                const isoDate = today.toISOString().split('T')[0];
+                const isoDate = new Date(
+                    today.getTime() - today.getTimezoneOffset() * 60000,
+                )
+                    .toISOString()
+                    .split('T')[0];
                 const result = await generateClipsForDate({
                     date: isoDate,
                     narratorId,

@@ -3,6 +3,15 @@ const state = {
   habits: { default: [], daySpecific: [] },
 };
 
+const syncGlobalSchedules = () => {
+  if (window.habitAssist?.syncSchedules) {
+    window.habitAssist.syncSchedules({
+      defaultSchedule: state.habits.default,
+      daySpecificSchedule: state.habits.daySpecific,
+    });
+  }
+};
+
 let elements = {
   habitForm: document.getElementById("habitForm"),
   habitType: document.getElementById("habitType"),
@@ -62,6 +71,8 @@ const plannerPage = {
 
       state.habits.default = defaultResp.schedule || [];
       state.habits.daySpecific = daySpecificResp.schedule || [];
+
+      syncGlobalSchedules();
 
       this.updateHabitLists();
       this.checkAlerts();
