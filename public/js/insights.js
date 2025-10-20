@@ -1,6 +1,59 @@
 // insightsTab.js
 import { state, api, timeUtils, uiUtils } from "./utils.js";
 
+const getDateKey = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+};
+
+const matchesHabitAndDate = (completion, habit, completionDate) =>
+  completion.habit_id === habit.id &&
+  completion.habit_type === habit.type &&
+  getDateKey(completion.completion_date) === completionDate;
+
+const upsertCompletionRecord = (list, completion) => {
+  if (!completion) return -1;
+  const dateKey = getDateKey(completion.completion_date);
+  let index = -1;
+  if (completion.id) {
+    index = list.findIndex((item) => item.id === completion.id);
+  }
+  if (index === -1 && dateKey) {
+    index = list.findIndex(
+      (item) =>
+        item.habit_id === completion.habit_id &&
+        item.habit_type === completion.habit_type &&
+        getDateKey(item.completion_date) === dateKey
+    );
+  }
+  if (index >= 0) {
+    list[index] = { ...list[index], ...completion };
+    return index;
+  }
+  list.push(completion);
+  return list.length - 1;
+};
+
+const removeCompletionRecord = (
+  list,
+  { id = null, habit = null, completionDate = null } = {}
+) => {
+  let index = -1;
+  if (id) {
+    index = list.findIndex((item) => item.id === id);
+  }
+  if (index === -1 && habit && completionDate) {
+    index = list.findIndex((item) =>
+      matchesHabitAndDate(item, habit, completionDate)
+    );
+  }
+  if (index >= 0) {
+    list.splice(index, 1);
+  }
+};
+
 let elements = {
   daysContainer: document.getElementById("daysContainer"),
   completionList: document.getElementById("completionList"),
@@ -44,16 +97,18 @@ export const insightsTab = {
     );
   },
   findCompletionIndex(habit, completionDate) {
-    return state.completions.findIndex(
-      (completion) =>
-        completion.habit_id === habit.id &&
-        completion.habit_type === habit.type &&
-        new Date(completion.completion_date).toISOString().split("T")[0] === completionDate
+    return state.weeklyCompletions.findIndex((completion) =>
+      matchesHabitAndDate(completion, habit, completionDate)
+    );
+  },
+  findHistoryCompletionIndex(habit, completionDate) {
+    return state.completions.findIndex((completion) =>
+      matchesHabitAndDate(completion, habit, completionDate)
     );
   },
   getCompletionForHabit(habit, completionDate) {
     const index = this.findCompletionIndex(habit, completionDate);
-    return index >= 0 ? state.completions[index] : null;
+    return index >= 0 ? state.weeklyCompletions[index] : null;
   },
   setCardBusy(habit, completionDate, isBusy) {
     const card = this.getHabitCard(habit, completionDate);
@@ -286,48 +341,81 @@ export const insightsTab = {
       });
   },
   async updateHabitCompletion({ habit, status, completionDate, silent = false }) {
-    const completionDateTime = new Date(
-      new Date(completionDate).setTime(new Date().getTime())
-    );
-    const existingIndex = this.findCompletionIndex(habit, completionDate);
-    const existingCompletion =
-      existingIndex >= 0 ? { ...state.completions[existingIndex] } : null;
-    const previousStatus = existingCompletion?.status || null;
-    const previousCompletionId = existingCompletion?.id || null;
+    let completionDateTime = new Date(`${completionDate}T00:00:00`);
+    if (Number.isNaN(completionDateTime.getTime())) {
+      completionDateTime = new Date();
+    } else {
+      const now = new Date();
+      completionDateTime.setHours(
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds(),
+        now.getMilliseconds()
+      );
+    }
+    const completionISO = completionDateTime.toISOString();
+    const isCurrentWeek = timeUtils.isDateInCurrentWeek(completionDateTime);
+    const weeklyIndex = this.findCompletionIndex(habit, completionDate);
+    const historyIndex = this.findHistoryCompletionIndex(habit, completionDate);
+    const existingWeekly =
+      weeklyIndex >= 0 ? { ...state.weeklyCompletions[weeklyIndex] } : null;
+    const existingHistory =
+      historyIndex >= 0 ? { ...state.completions[historyIndex] } : null;
+    const previousStatus = existingWeekly?.status ?? existingHistory?.status ?? null;
+    const previousCompletionId = existingWeekly?.id ?? existingHistory?.id ?? null;
     let success = false;
 
     this.setCardBusy(habit, completionDate, true);
 
     try {
       let completionRecord = null;
-      if (existingIndex >= 0) {
-        state.completions[existingIndex] = {
-          ...state.completions[existingIndex],
+      if (previousCompletionId) {
+        const updatedRecord = {
+          id: previousCompletionId,
+          habit_id: habit.id,
+          habit_type: habit.type,
           status,
-          completion_date: completionDateTime.toISOString(),
+          completion_date: completionISO,
         };
-        await api.updateCompletion(
-          state.completions[existingIndex].id,
-          status,
-          completionDateTime
-        );
-        completionRecord = state.completions[existingIndex];
+        upsertCompletionRecord(state.completions, updatedRecord);
+        if (isCurrentWeek) {
+          upsertCompletionRecord(state.weeklyCompletions, updatedRecord);
+        } else {
+          removeCompletionRecord(state.weeklyCompletions, {
+            id: previousCompletionId,
+          });
+        }
+        await api.updateCompletion(previousCompletionId, status, completionDateTime);
+        completionRecord = updatedRecord;
       } else {
+        const provisionalRecord = {
+          id: null,
+          habit_id: habit.id,
+          habit_type: habit.type,
+          status,
+          completion_date: completionISO,
+        };
+        let provisionalIndex = -1;
+        if (isCurrentWeek) {
+          provisionalIndex = upsertCompletionRecord(
+            state.weeklyCompletions,
+            provisionalRecord
+          );
+        }
         const response = await api.createCompletion(
           habit,
           status,
           completionDateTime
         );
         const completionId = response?.id;
-        completionRecord = {
-          id: completionId,
-          habit_id: habit.id,
-          habit_type: habit.type,
-          status,
-          completion_date: completionDateTime.toISOString(),
-        };
+        completionRecord = { ...provisionalRecord, id: completionId || null };
         if (completionId) {
-          state.completions.push(completionRecord);
+          upsertCompletionRecord(state.completions, completionRecord);
+          if (isCurrentWeek) {
+            upsertCompletionRecord(state.weeklyCompletions, completionRecord);
+          }
+        } else if (provisionalIndex >= 0) {
+          state.weeklyCompletions[provisionalIndex] = provisionalRecord;
         }
       }
 
@@ -348,13 +436,43 @@ export const insightsTab = {
       this.updateCompletionHistory();
       success = true;
     } catch (error) {
-      if (existingIndex >= 0) {
-        state.completions[existingIndex] = existingCompletion;
+      if (previousCompletionId) {
+        if (existingHistory) {
+          upsertCompletionRecord(state.completions, existingHistory);
+        } else {
+          removeCompletionRecord(state.completions, {
+            id: previousCompletionId,
+            habit,
+            completionDate,
+          });
+        }
+        if (existingWeekly) {
+          upsertCompletionRecord(state.weeklyCompletions, existingWeekly);
+        } else {
+          removeCompletionRecord(state.weeklyCompletions, {
+            id: previousCompletionId,
+            habit,
+            completionDate,
+          });
+        }
+      } else {
+        removeCompletionRecord(state.weeklyCompletions, {
+          habit,
+          completionDate,
+        });
       }
       this.applyStatusToHabitCard(habit, completionDate, {
         status: previousStatus,
         completionId: previousCompletionId,
       });
+      if (
+        state.selectedHabit &&
+        state.selectedHabit.id === habit.id &&
+        state.selectedHabit.type === habit.type &&
+        state.selectedHabit.day === habit.day
+      ) {
+        state.selectedHabit.completion = existingWeekly || existingHistory || null;
+      }
       this.updateCompletionHistory();
       console.error("Error updating completion:", error);
       if (!silent) {
@@ -410,6 +528,7 @@ export const insightsTab = {
       state.completions = state.completions.filter(
         (item) => item.id !== completionId
       );
+      removeCompletionRecord(state.weeklyCompletions, { id: completionId });
       if (
         state.selectedHabit &&
         state.selectedHabit.id === habitSnapshot.id &&
@@ -446,6 +565,11 @@ export const insightsTab = {
       const response = await api.fetchCompletions({ limit, offset });
       const newCompletions = response?.completions || [];
       state.completions = state.completions.concat(newCompletions);
+      newCompletions.forEach((completion) => {
+        if (timeUtils.isDateInCurrentWeek(completion.completion_date)) {
+          upsertCompletionRecord(state.weeklyCompletions, completion);
+        }
+      });
       state.completionsPage = {
         limit: response?.limit ?? limit,
         offset: response?.nextOffset ?? offset + newCompletions.length,

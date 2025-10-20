@@ -4,6 +4,7 @@ export const state = {
   habits: { default: [], daySpecific: [] },
   habitsLoaded: false,
   completions: [],
+  weeklyCompletions: [],
   completionsPage: {
     limit: 25,
     offset: 0,
@@ -16,6 +17,7 @@ export const state = {
 };
 
 const HABIT_WATCHER_INTERVAL_MS = 5000;
+const WEEKLY_COMPLETION_LIMIT = 500;
 let habitWatcherIntervalId = null;
 
 const applyScheduleUpdate = (
@@ -311,16 +313,44 @@ export const timeUtils = {
   getTodayDate() {
     return new Date().toISOString().split("T")[0];
   },
+  getStartOfCurrentWeek() {
+    const now = new Date();
+    const monday = new Date(now);
+    const day = monday.getDay();
+    const diff = monday.getDate() - day + (day === 0 ? -6 : 1);
+    monday.setDate(diff);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  },
+  getEndOfCurrentWeek() {
+    const startOfWeek = this.getStartOfCurrentWeek();
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    return endOfWeek;
+  },
+  isDateInCurrentWeek(dateLike) {
+    const target = new Date(dateLike);
+    if (Number.isNaN(target.getTime())) return false;
+    const weekStart = this.getStartOfCurrentWeek();
+    const weekEnd = this.getEndOfCurrentWeek();
+    return target >= weekStart && target < weekEnd;
+  },
 };
 
 export const uiUtils = {
   async fetchAllData() {
     try {
-      const [defaultSchedule, specificSchedule, completionData] =
+      const [
+        defaultSchedule,
+        specificSchedule,
+        completionData,
+        weeklyCompletionData,
+      ] =
         await Promise.all([
           api.fetchDefaultSchedule(),
           api.fetchSpecificSchedule(),
           api.fetchCompletions(),
+          api.fetchCompletions({ limit: WEEKLY_COMPLETION_LIMIT }),
         ]);
       applyScheduleUpdate(defaultSchedule, specificSchedule);
       const completionPayload = completionData || {};
@@ -331,6 +361,12 @@ export const uiUtils = {
         total: completionPayload.total ?? state.completions.length,
         hasMore: completionPayload.hasMore ?? false,
       };
+      const weeklyPayload = weeklyCompletionData || {};
+      state.weeklyCompletions = (weeklyPayload.completions || []).filter(
+        (completion) => {
+          return timeUtils.isDateInCurrentWeek(completion.completion_date);
+        }
+      );
     } catch (error) {
       console.error("Error fetching data:", error);
       alert("Failed to load data. Please try again.");

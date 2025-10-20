@@ -61,6 +61,13 @@ body.page--insights #content {
     width: 100%;
 }
 
+body.page--insights .app-header {
+    max-width: 1032px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .app-header {
     display: flex;
     flex-wrap: wrap;
